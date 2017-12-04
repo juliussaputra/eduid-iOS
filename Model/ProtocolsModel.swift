@@ -7,7 +7,7 @@
 //
 
 import Foundation
-class Protocols : NSObject {
+class ProtocolsModel : NSObject {
     
     override init() {
         super.init()

@@ -19,29 +19,27 @@ class ViewController: UIViewController {
         /*
          var newData : [String : String] = [:]
          newData["cfg_name"] = "bully"
-         newData["cfg_value"] = "00000"
+         newData["cfg_value"] = "fake dragon rider"
          
-         //        newData.setValue("blabla", forKey: "cfg_name")
-         //        newData.setValue("123455", forKey: "cfg_value")
          //model.save(data: newData)
-         model.fetch()
-         model.delete(name: "budi")
+         //model.fetch()
+         //model.delete(name: "bully")
          //model.deleteAll()
-         model.fetch()
+        // model.fetch()
          let allData = model.getAll()
-         print(allData[0].allKeys)
-         for key in allData[0].allKeys{
+        */
          
-         print(" inf for key at 0 :" , key as! String)
-         }
-         
-         */
+ 
         
         
         // TEST THE URL REQUEST
-        let requester = OAuthRequester.init()
-        let reqURL = URL(string: "https://rss.itunes.apple.com/api/v1/us/apple-music/hot-tracks/all/10/explicit.json")
-        requester.fetch(url: reqURL!, requestData: self.requestData)
+        
+        let reqURL = URL(string: "https://eduid.htwchur.ch/oidc/.well-known/openid-configuration")
+        //model.deleteAll()
+        //model.fetchServer(serverUrl: reqURL!)
+        //model.fetchDatabase()
+        
+//        requester.fetch(url: reqURL!, requestData: self.requestData)
         
     }
     

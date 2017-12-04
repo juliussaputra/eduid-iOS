@@ -15,7 +15,7 @@ class OAuthRequester: NSObject { //, OAuthRequest {
     private var clientToken : String? = nil
     private var accessToken : String? = nil
     private var clientId    : String? = nil
-    //    private var sharedDataStore : DataStore!
+    
     private var clientData : TokenModel!
     private var accessData : TokenModel!
     
