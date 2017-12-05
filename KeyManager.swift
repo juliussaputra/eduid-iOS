@@ -58,7 +58,7 @@ class KeyManager {
         
         var options = NSMutableDictionary()
         var privateKey : SecKey? = nil
-        options.setObject("password_for_the_key", forKey: kSecImportExportPassphrase as! NSCopying)
+        options.setObject("give_me_password", forKey: kSecImportExportPassphrase as! NSCopying)
         var items = CFArrayCreate(nil, nil, 0, nil)
         var securityError = SecPKCS12Import(data!, options as CFDictionary, &items)
         if ( securityError == noErr && CFArrayGetCount(items) > 0 ) {
@@ -75,32 +75,42 @@ class KeyManager {
     }
     
     func cutHeaderFooterPem (certString : inout String) {
+        //CUT HEADER AND TAIL FROM PEM KEY
         let offset = ("-----BEGIN RSA PRIVATE KEY-----").count
         let index = certString.index(certString.startIndex, offsetBy: offset+1)
         
         let tail = "-----END RSA PRIVATE KEY-----"
         if let lowerBound = certString.range(of: tail)?.lowerBound {
             certString = String(certString[index ..< lowerBound])
-            print(certString)
+            print(certString ?? "")
         }
     }
     
-    func getPrivateKeyPEM() -> SecKey? {
+    func getKeyFromPEM() -> SecKey? {
         var keyInString : String?
         do{
             keyInString = try String(contentsOfFile: resourcePath!)
         } catch { print(error)}
         
-        print("BEFORE : " , keyInString!)
+        print("BEFORE : " , keyInString!.count)
+        //Extracting the Header and Footer from the PEM data to get the RSA key
         cutHeaderFooterPem(certString: &keyInString!)
-        let data = NSData(base64Encoded: keyInString!, options: NSData.Base64DecodingOptions.ignoreUnknownCharacters)
-        print("DATA :" , data)
-        let attributes = NSMutableDictionary()
-        attributes.setValue(kSecAttrKeyTypeRSA, forKey: "kSecAttrKeyType")
-        attributes.setValue(kSecAttrKeyClassPrivate, forKey: "kSecAttrKeyClass")
-        attributes.setValue(kSecAttrKeySizeInBits, forKey: "2048")
-        let privateKey = SecKeyCreateWithData(data!, attributes, nil)
         
+        
+        let data = NSData(base64Encoded: keyInString!, options: NSData.Base64DecodingOptions.ignoreUnknownCharacters)
+        print("BEFORE CUT : " , data!)
+//        let range = NSRange.init(location: 26, length: (data?.length)! - 26)
+//        let subdata = data?.subdata(with: range)
+        
+       print("DATA :" , data?.length )
+        var attributes : [String : String]  = [:]
+        attributes[kSecAttrKeyType as String] = kSecAttrKeyTypeRSA as String
+        attributes[kSecAttrKeyClass as String] = kSecAttrKeyClassPrivate as String
+        attributes[kSecAttrKeySizeInBits as String] = String(2048) //String((data?.length)!) * 8)
+        var error : Unmanaged<CFError>?
+        
+        let privateKey = SecKeyCreateWithData(data! as CFData, attributes as CFDictionary, &error)
+        print(error.debugDescription)
         return privateKey
     }
     

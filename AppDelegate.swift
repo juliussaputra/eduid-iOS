@@ -9,6 +9,7 @@
 import UIKit
 import CoreData
 import Security
+import CoreFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -18,30 +19,58 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
-        
+        //get public key
         var urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
         print("url path : " , urlPath?.absoluteString)
         
         var keyMan = KeyManager.init(resourcePath: (urlPath?.relativePath)!)
-        var key = keyMan.getPublicKey()
-        print(key.debugDescription)
+        var publickey = keyMan.getPublicKey()
+        print(publickey.debugDescription)
         
+        //encrypt data with public key
+        let algorithm = SecKeyAlgorithm.rsaEncryptionOAEPSHA512
+        var canEncrypt = SecKeyIsAlgorithmSupported(publickey!, SecKeyOperationType.encrypt, algorithm)
+        print("SECkeyBlockSize : " , SecKeyGetBlockSize(publickey!))
+        let plainText = "I AM LOCKED, PLEASE UNLOCK ME"
+        canEncrypt = canEncrypt && plainText.count < (SecKeyGetBlockSize(publickey!) - 130)
+        
+        var cipherText : Data? = nil
+        if(canEncrypt){
+            var error : Unmanaged <CFError>?
+            cipherText = SecKeyCreateEncryptedData(publickey!, algorithm, plainText.data(using: String.Encoding.utf8)! as CFData, &error) as! Data
+            if let errormsg = error?.takeRetainedValue() {
+                print(errormsg)
+            }
+        }
+        print("CIPHER TEXT : " , cipherText?.base64EncodedString() ?? "error by encryption")
+        
+        
+        //get private key from pem
         keyMan = KeyManager(resourcePath: (Bundle.main.url(forResource: "ios_priv", withExtension: ".pem")?.relativePath)!)
-        keyMan.getPrivateKeyPEM()
-        print(key.debugDescription)
+        var privateKey = keyMan.getKeyFromPEM()
         
+        print(privateKey.debugDescription)
         
-        
-        var urls = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        
-        var bundles = Bundle.allBundles
-        var filesMan = FileManager.default.urls(for: .allLibrariesDirectory, in: .allDomainsMask)
-        for bundle in bundles{
-            print("BUNDLE : ", bundle.bundlePath)
+        //Decrypt with private key
+        guard SecKeyIsAlgorithmSupported(privateKey!, .decrypt, algorithm) else {
+            print("NOT SUPPORTED")
+            return false
         }
-        for files in filesMan{
-            print("FILES : " , files.relativeString)
+        if cipherText?.count == SecKeyGetBlockSize(privateKey!){
+            print("SAME LENGTH")
         }
+        var error: Unmanaged<CFError>?
+        guard let cleartext = SecKeyCreateDecryptedData(privateKey!, algorithm, cipherText! as CFData, &error) as Data?  else {
+            print("ERROR DECRYPTING : " , error?.takeRetainedValue().localizedDescription ?? "error")
+            return false
+        }
+        
+        print("DECRYPTED : " , String.init(data: cleartext, encoding: .utf8) )
+        
+        var status = KeyChain.saveKey(tagString: "privateKey", key: privateKey!)
+        print("STATUS : " , status)
+        let keyExtra = KeyChain.loadKey(tagString: "privateKey")
+        print("SVED : " ,keyExtra.debugDescription)
         
         return true
     }
