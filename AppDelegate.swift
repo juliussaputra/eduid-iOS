@@ -20,37 +20,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         //get public key
-        var urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
-        print("url path : " , urlPath?.absoluteString)
+        let urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
+        print("url path : " , urlPath?.absoluteString as Any)
         
         var keyMan = KeyManager.init(resourcePath: (urlPath?.relativePath)!)
-        var publickey = keyMan.getPublicKey()
+        let publickey = keyMan.getPublicKey()
         print(publickey.debugDescription)
         
         //encrypt data with public key
         let algorithm = SecKeyAlgorithm.rsaEncryptionOAEPSHA512
-        var canEncrypt = SecKeyIsAlgorithmSupported(publickey!, SecKeyOperationType.encrypt, algorithm)
         print("SECkeyBlockSize : " , SecKeyGetBlockSize(publickey!))
         let plainText = "I AM LOCKED, PLEASE UNLOCK ME"
-        canEncrypt = canEncrypt && plainText.count < (SecKeyGetBlockSize(publickey!) - 130)
-        
-        var cipherText : Data? = nil
-        if(canEncrypt){
-            var error : Unmanaged <CFError>?
-            cipherText = SecKeyCreateEncryptedData(publickey!, algorithm, plainText.data(using: String.Encoding.utf8)! as CFData, &error) as! Data
-            if let errormsg = error?.takeRetainedValue() {
-                print(errormsg)
-            }
-        }
+        let cipherText = CryptoManager.encryptData(key: publickey!, algorithm: algorithm, plainData: plainText.data(using: String.Encoding.utf8)! as NSData)
         print("CIPHER TEXT : " , cipherText?.base64EncodedString() ?? "error by encryption")
         
         
         //get private key from pem
         keyMan = KeyManager(resourcePath: (Bundle.main.url(forResource: "ios_priv", withExtension: ".pem")?.relativePath)!)
-        var privateKey = keyMan.getKeyFromPEM()
+        let privateKey = keyMan.getKeyFromPEM()
         
         print(privateKey.debugDescription)
-        
+        /*
         //Decrypt with private key
         guard SecKeyIsAlgorithmSupported(privateKey!, .decrypt, algorithm) else {
             print("NOT SUPPORTED")
@@ -64,24 +54,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("ERROR DECRYPTING : " , error?.takeRetainedValue().localizedDescription ?? "error")
             return false
         }
+ 
         
         print("DECRYPTED : " , String.init(data: cleartext, encoding: .utf8) )
+        */
         
-        var status = KeyChain.saveKey(tagString: "privateKey", key: privateKey!)
+        let status = KeyChain.saveKey(tagString: "privateKey", key: privateKey!)
         print("STATUS : " , status)
-        let keyExtra = KeyChain.loadKey(tagString: "privateKey")
-        print("SVED : " ,keyExtra.debugDescription)
+        
+//        let keyExtra = KeyChain.loadKey(tagString: "privateKey")
+//        print("SVED : " ,keyExtra.debugDescription)
         
         return true
     }
     
     
-    func work( p: UnsafeMutablePointer<Float>){
+    func work( p: UnsafeMutablePointer<Float>?){
         if p != nil {
-            p.pointee = 10
+            p?.pointee = 10
         }
-        print("POINTER : ",p)
-        print(p.pointee)
+        print("POINTER : ",p!)
+        print(p?.pointee as Any)
     }
     
     func printPaths(paths : [URL]){

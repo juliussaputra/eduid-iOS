@@ -18,10 +18,15 @@ class KeyManager {
         self.resourcePath = resourcePath
     }
     
+    
+    func changeResourcePath(path : String){
+        self.resourcePath = path
+    }
+    
     func  getPublicKey () -> SecKey? {
         
         let certData = NSData(contentsOfFile: resourcePath!)
-        let cert = SecCertificateCreateWithData(nil, certData as! CFData)
+        let cert = SecCertificateCreateWithData(nil, certData! as CFData)
         var publicKey : SecKey? = nil
         var trust : SecTrust? = nil
         var policy : SecPolicy? = nil
@@ -31,6 +36,7 @@ class KeyManager {
                 if( SecTrustCreateWithCertificates(cert!, policy, &trust) == noErr){
                     var result : SecTrustResultType = SecTrustResultType.unspecified
                     let res = SecTrustEvaluate(trust!, &result)
+                    print(res)
                     //recoverableTrustFailure
                     if(result == SecTrustResultType.proceed || result == SecTrustResultType.recoverableTrustFailure){
                         publicKey = SecTrustCopyPublicKey(trust!)
@@ -56,9 +62,9 @@ class KeyManager {
         
         let data = NSData(contentsOfFile: resourcePath!)
         
-        var options = NSMutableDictionary()
+        let options = NSMutableDictionary()
         var privateKey : SecKey? = nil
-        options.setObject("give_me_password", forKey: kSecImportExportPassphrase as! NSCopying)
+        options.setObject("password", forKey: kSecImportExportPassphrase as! NSCopying)
         var items = CFArrayCreate(nil, nil, 0, nil)
         var securityError = SecPKCS12Import(data!, options as CFDictionary, &items)
         if ( securityError == noErr && CFArrayGetCount(items) > 0 ) {
@@ -82,7 +88,7 @@ class KeyManager {
         let tail = "-----END RSA PRIVATE KEY-----"
         if let lowerBound = certString.range(of: tail)?.lowerBound {
             certString = String(certString[index ..< lowerBound])
-            print(certString ?? "")
+            print(certString as Any)
         }
     }
     
@@ -99,10 +105,10 @@ class KeyManager {
         
         let data = NSData(base64Encoded: keyInString!, options: NSData.Base64DecodingOptions.ignoreUnknownCharacters)
         print("BEFORE CUT : " , data!)
-//        let range = NSRange.init(location: 26, length: (data?.length)! - 26)
-//        let subdata = data?.subdata(with: range)
+        //        let range = NSRange.init(location: 26, length: (data?.length)! - 26)
+        //        let subdata = data?.subdata(with: range)
         
-       print("DATA :" , data?.length )
+        print("DATA :" , data?.length as Any)
         var attributes : [String : String]  = [:]
         attributes[kSecAttrKeyType as String] = kSecAttrKeyTypeRSA as String
         attributes[kSecAttrKeyClass as String] = kSecAttrKeyClassPrivate as String
@@ -113,6 +119,5 @@ class KeyManager {
         print(error.debugDescription)
         return privateKey
     }
-    
-    
+
 }

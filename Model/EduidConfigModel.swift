@@ -187,7 +187,7 @@ class EduidConfigModel : NSObject {
             let keys = entityDesc.attributesByName
             
             for key in keys.keys {
-                print("Printing Data , key : ",  key , " , value :" , confData.value(forKey: key))
+                print("Printing Data , key : ",  key , " , value :" , confData.value(forKey: key) as Any)
             }
         }
     }

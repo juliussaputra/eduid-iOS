@@ -9,8 +9,13 @@
 import Foundation
 
 class KeyChain {
-    
-    class func saveKey(tagString: String, key: SecKey) -> OSStatus{
+    /**
+     Saving a specific key into the keychain.
+     - parameter tagString: unique identity for the Key to simplify the retrieving progress.
+     - parameter key: key data which want to be saved in to the keychain
+     - returns:  Status from the saving process
+     */
+    static func saveKey(tagString: String, key: SecKey) -> OSStatus{
         let tag = tagString.data(using: .utf8)
         let saveQuery = [
             kSecClass as String : kSecClassKey as String,
@@ -18,12 +23,12 @@ class KeyChain {
             kSecValueRef as String : key
         ] as [String : Any]
         // delete the old key if it does exist
-        SecItemDelete(saveQuery as CFDictionary)
-        
+        let stats = SecItemDelete(saveQuery as CFDictionary)
+        print("DELETE STATUS ON SAVING : " , stats.description)
         return SecItemAdd(saveQuery as CFDictionary, nil)
     }
     
-    class func loadKey(tagString : String) -> SecKey? {
+    static func loadKey(tagString : String) -> SecKey? {
         let tag = tagString.data(using: .utf8)
         let getQuery = [
             kSecClass as String : kSecClassKey,

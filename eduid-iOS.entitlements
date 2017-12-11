@@ -6,5 +6,9 @@
 	<array>
 		<string>group.htwchur.eduid.share</string>
 	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)ch.htwchur.eduid-iOS.keys</string>
+	</array>
 </dict>
 </plist>
