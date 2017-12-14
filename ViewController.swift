@@ -32,10 +32,11 @@ class ViewController: UIViewController {
         
         // TEST THE URL REQUEST
         
-//        let reqURL = URL(string: "https://eduid.htwchur.ch/oidc/.well-known/openid-configuration")
+//        let reqURL = URL(string: "https://eduid.htwchur.ch/oidc/.well-known/openid-   configuration")
         //model.deleteAll()
         //model.fetchServer(serverUrl: reqURL!)
         //model.fetchDatabase()
+        
         
 //        requester.fetch(url: reqURL!, requestData: self.requestData)
         var header : [String : Any] = [:]
@@ -51,6 +52,7 @@ class ViewController: UIViewController {
         let jwt = jws.sign(header: header, payload: payload, key: privateKey!)
         print("JWT : " , jwt!)
         
+         /*
         let urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
         print("url path : " , urlPath?.absoluteString as Any)
         
@@ -58,6 +60,8 @@ class ViewController: UIViewController {
         let publickey = keyMan.getPublicKey()
         let verified = jws.verify(header: header, payload: payload, signature: &jws.signatureStr!, key: publickey!)
         print(verified)
+        */
+        
     }
     
     override func didReceiveMemoryWarning() {

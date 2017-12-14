@@ -18,7 +18,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        //jwk to pem PKCS#1
+        let pubPath = Bundle.main.url(forResource: "eduid_pub", withExtension: "jwks")
+        print("Public key Path : \(pubPath?.path)")
+        let keyman = KeyManager(resourcePath: (pubPath?.relativePath)!)
+        let keyStr = keyman.jwksToPem()
+        let keyData = keyStr?.data(using: .utf8)
+        let options : [String : Any] = [kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+                                        kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+                                        kSecAttrKeySizeInBits as String : 2048
+                                        ]
+        var error : Unmanaged<CFError>?
+        if let key = SecKeyCreateWithData(keyData as! CFData, options as CFDictionary, &error) {
+            print("CREATE KEY SUCCESSFULLY")
+        }else {
+            print(error.debugDescription)
+        }
         
+        /*
         //get public key
         let urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
         print("url path : " , urlPath?.absoluteString as Any)
@@ -40,7 +57,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let privateKey = keyMan.getKeyFromPEM()
         
         print(privateKey.debugDescription)
-        /*
+        
         //Decrypt with private key
         guard SecKeyIsAlgorithmSupported(privateKey!, .decrypt, algorithm) else {
             print("NOT SUPPORTED")
@@ -57,14 +74,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
  
         
         print("DECRYPTED : " , String.init(data: cleartext, encoding: .utf8) )
-        */
+ 
         
         let status = KeyChain.saveKey(tagString: "privateKey", key: privateKey!)
         print("STATUS : " , status)
-        
+        */
 //        let keyExtra = KeyChain.loadKey(tagString: "privateKey")
 //        print("SVED : " ,keyExtra.debugDescription)
+ 
         
+ 
         return true
     }
     

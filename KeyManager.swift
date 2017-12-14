@@ -98,7 +98,7 @@ class KeyManager {
             keyInString = try String(contentsOfFile: resourcePath!)
         } catch { print(error)}
         
-        print("BEFORE : " , keyInString!.count)
+        print("PEM BEFORE  : " , keyInString!)
         //Extracting the Header and Footer from the PEM data to get the RSA key
         cutHeaderFooterPem(certString: &keyInString!)
         
@@ -119,5 +119,106 @@ class KeyManager {
         print(error.debugDescription)
         return privateKey
     }
+    
+    func jwksToPem() -> String? {
+        var dataFromPath = NSData(contentsOfFile: self.resourcePath!)
+        var jsonData : [String : Any]?
+        var pemResult : String?
+        do{
+            jsonData = try JSONSerialization.jsonObject(with: dataFromPath as Data!, options: JSONSerialization.ReadingOptions.mutableContainers) as? [String : Any]
+        }catch{
+            print(error)
+            return nil
+        }
+        
+        let keys = jsonData!["keys"] as! [[String: String]]
+        
+        if keys.count == 1 {
+            let key = keys.first
+            print("KEY  = \(key!)")
+            pemResult = jwkToPem(key: key!)
+        }
+        return pemResult
+    }
+    
+    func jwkToPem(key : [String : String]) -> String? {
+        
+        var exponentStr = base64UrlToBase64(base64url: key["e"]!)
+        while exponentStr.count % 4 != 0{
+            exponentStr += "="
+        }
+        let exponentData = Data(base64Encoded: exponentStr)
 
+        var modulusStr = base64UrlToBase64(base64url: key["n"]!)
+        while modulusStr.count % 4 != 0{
+            modulusStr += "="
+        }
+        let modulusData = Data(base64Encoded: modulusStr)
+        print("exponent : \(exponentStr)")
+        print("modulus : \(modulusStr)")
+        let pemGen = PemGenerator(modulusHex: (modulusData?.hexDescription)!, exponentHex: (exponentData?.hexDescription)!, lengthModulus: (modulusData?.count)!, lengthExponent: (exponentData?.count)!)
+        let pemString = pemGen.generatePublicPem()
+        
+        return pemString
+    }
+
+    private func  bytesCount (base64str : String) -> Int{
+        
+        var bitsCount = base64str.count * 6
+        if bitsCount % 8 == 0 {
+            return bitsCount / 8
+        }
+        else {
+            return (bitsCount / 8) + 1
+        }
+    }
+    
+    private func base64UrlToBase64(base64url : String) -> String {
+        var base64 = base64url.replacingOccurrences(of: "-", with: "+")
+                             .replacingOccurrences(of: "_", with: "/")
+        /* NO PADDING
+        while(base64.count % 4 != 0){
+            base64.append("=")
+        }*/
+        return base64
+    }
+    
+    
+    
+}
+
+extension String{
+    
+    public func hexToBase64() -> Data {
+        var hex = self
+        var data = Data()
+        while hex.count > 0 {
+            
+            let indexHex = hex.index(hex.startIndex, offsetBy: 2)
+            let c : String = String(hex[..<indexHex])
+            hex = String(hex[indexHex...])
+            var ch: UInt32 = 0
+            Scanner(string: c).scanHexInt32(&ch)
+            var char = UInt8 (ch)
+            data.append(&char, count: 1)
+        }
+//        let base64Str = data.base64EncodedString()
+        
+        return data // base64Str.clearPaddding()
+    }
+    
+    public func clearPaddding() -> String {
+        var tmp = self
+        while(tmp.last == "="){
+            tmp.removeLast()
+        }
+        return tmp
+    }
+    
+}
+
+extension Data {
+    var hexDescription : String {
+        return reduce(""){$0 + String(format: "%02x", $1)}
+    }
 }
