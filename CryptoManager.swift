@@ -11,7 +11,6 @@ import Foundation
 class CryptoManager {
     
     static func encryptData (key: SecKey ,algorithm : SecKeyAlgorithm, plainData : NSData) -> NSData? {
-        
         let canEncrypt = SecKeyIsAlgorithmSupported(key, SecKeyOperationType.encrypt, algorithm)
         print("plaindata length : \(plainData.length)")
         print("keysize : \(SecKeyGetBlockSize(key))")

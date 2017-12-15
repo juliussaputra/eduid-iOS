@@ -20,73 +20,102 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         //jwk to pem PKCS#1
         let pubPath = Bundle.main.url(forResource: "eduid_pub", withExtension: "jwks")
-        print("Public key Path : \(pubPath?.path)")
+        print("Public key Path : \(pubPath?.path ?? " ")")
         let keyman = KeyManager(resourcePath: (pubPath?.relativePath)!)
         let keyStr = keyman.jwksToPem()
-        let keyData = keyStr?.data(using: .utf8)
-        let options : [String : Any] = [kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
-                                        kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
-                                        kSecAttrKeySizeInBits as String : 2048
+        let keyData = Data(base64Encoded: keyStr!)
+        let options : [String : Any] = [kSecAttrKeyType as String: kSecAttrKeyTypeRSA as String,
+                                        kSecAttrKeyClass as String: kSecAttrKeyClassPublic as String,
+                                        kSecAttrKeySizeInBits as String : 2048,
                                         ]
         var error : Unmanaged<CFError>?
-        if let key = SecKeyCreateWithData(keyData as! CFData, options as CFDictionary, &error) {
-            print("CREATE KEY SUCCESSFULLY")
-        }else {
+        let publickey = SecKeyCreateWithData(keyData! as CFData, options as CFDictionary, &error)
+        if(error != nil) {
             print(error.debugDescription)
+            return true
         }
+        let attributes = SecKeyCopyAttributes(publickey!) as! NSDictionary
+        let size = SecKeyGetBlockSize(publickey!)
+        print("SIZE : " , size)
+        print("ATTRIBUTES : " , attributes["type"] , kSecAttrKeyTypeRSA as String)
+        
+        let supported = SecKeyIsAlgorithmSupported(publickey!, SecKeyOperationType.encrypt, SecKeyAlgorithm.rsaEncryptionPKCS1)
+        print("KEYSTR : \(keyStr!)")
+        guard let keyFromChain = SecKeyCopyExternalRepresentation(publickey!, &error)! as? Data else {
+            print(error.debugDescription)
+            return true
+        }
+        print("key : \(keyFromChain.base64EncodedString() )")
+        print("Key hex : \(keyFromChain.hexDescription) ")
+        
+        let jwkDict  = keyman.pemToJWK(pemData: keyFromChain)
+        print(jwkDict)
         
         /*
-        //get public key
-        let urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
-        print("url path : " , urlPath?.absoluteString as Any)
+         //get public key
+         let urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
+         print("url path : " , urlPath?.absoluteString as Any)
+         
+         var keyMan = KeyManager.init(resourcePath: (urlPath?.relativePath)!)
+         let publickey = keyMan.getPublicKey()
+         print(publickey.debugDescription)
+         
+         //encrypt data with public key
+         let algorithm = SecKeyAlgorithm.rsaEncryptionOAEPSHA512
+         print("SECkeyBlockSize : " , SecKeyGetBlockSize(publickey!))
+         let plainText = "I AM LOCKED, PLEASE UNLOCK ME"
+         let cipherText = CryptoManager.encryptData(key: publickey!, algorithm: algorithm, plainData: plainText.data(using: String.Encoding.utf8)! as NSData)
+         print("CIPHER TEXT : " , cipherText?.base64EncodedString() ?? "error by encryption")
+         
+         
+         //get private key from pem
+         keyMan = KeyManager(resourcePath: (Bundle.main.url(forResource: "ios_priv", withExtension: ".pem")?.relativePath)!)
+         let privateKey = keyMan.getKeyFromPEM()
+         
+         print(privateKey.debugDescription)
+         
+         //Decrypt with private key
+         guard SecKeyIsAlgorithmSupported(privateKey!, .decrypt, algorithm) else {
+         print("NOT SUPPORTED")
+         return false
+         }
+         if cipherText?.count == SecKeyGetBlockSize(privateKey!){
+         print("SAME LENGTH")
+         }
+         var error: Unmanaged<CFError>?
+         guard let cleartext = SecKeyCreateDecryptedData(privateKey!, algorithm, cipherText! as CFData, &error) as Data?  else {
+         print("ERROR DECRYPTING : " , error?.takeRetainedValue().localizedDescription ?? "error")
+         return false
+         }
+         
+         
+         print("DECRYPTED : " , String.init(data: cleartext, encoding: .utf8) )
+         
+         
+         let status = KeyChain.saveKey(tagString: "privateKey", key: privateKey!)
+         print("STATUS : " , status)
+         */
+        //        let keyExtra = KeyChain.loadKey(tagString: "privateKey")
+        //        print("SVED : " ,keyExtra.debugDescription)
         
-        var keyMan = KeyManager.init(resourcePath: (urlPath?.relativePath)!)
-        let publickey = keyMan.getPublicKey()
-        print(publickey.debugDescription)
+        keygeneratortest()
         
-        //encrypt data with public key
-        let algorithm = SecKeyAlgorithm.rsaEncryptionOAEPSHA512
-        print("SECkeyBlockSize : " , SecKeyGetBlockSize(publickey!))
-        let plainText = "I AM LOCKED, PLEASE UNLOCK ME"
-        let cipherText = CryptoManager.encryptData(key: publickey!, algorithm: algorithm, plainData: plainText.data(using: String.Encoding.utf8)! as NSData)
-        print("CIPHER TEXT : " , cipherText?.base64EncodedString() ?? "error by encryption")
-        
-        
-        //get private key from pem
-        keyMan = KeyManager(resourcePath: (Bundle.main.url(forResource: "ios_priv", withExtension: ".pem")?.relativePath)!)
-        let privateKey = keyMan.getKeyFromPEM()
-        
-        print(privateKey.debugDescription)
-        
-        //Decrypt with private key
-        guard SecKeyIsAlgorithmSupported(privateKey!, .decrypt, algorithm) else {
-            print("NOT SUPPORTED")
-            return false
-        }
-        if cipherText?.count == SecKeyGetBlockSize(privateKey!){
-            print("SAME LENGTH")
-        }
-        var error: Unmanaged<CFError>?
-        guard let cleartext = SecKeyCreateDecryptedData(privateKey!, algorithm, cipherText! as CFData, &error) as Data?  else {
-            print("ERROR DECRYPTING : " , error?.takeRetainedValue().localizedDescription ?? "error")
-            return false
-        }
- 
-        
-        print("DECRYPTED : " , String.init(data: cleartext, encoding: .utf8) )
- 
-        
-        let status = KeyChain.saveKey(tagString: "privateKey", key: privateKey!)
-        print("STATUS : " , status)
-        */
-//        let keyExtra = KeyChain.loadKey(tagString: "privateKey")
-//        print("SVED : " ,keyExtra.debugDescription)
- 
-        
- 
         return true
     }
     
+    func keygeneratortest() {
+        let keydict = KeyManager.generateKeyPair(keyTag: "htwchur.keys", keyType: kSecAttrKeyTypeRSA as String)
+        if(keydict == nil){
+            print("NILLLL")
+        }
+        
+        let keyFromKeychain = KeyChain.loadKey(tagString: "htwchur.keys")
+        print(keydict!["private"])
+        print(keydict!["public"])
+        print(keyFromKeychain!)
+        print(KeyChain.deleteKey(tagString: "htwchur.keys"))
+        
+    }
     
     func work( p: UnsafeMutablePointer<Float>?){
         if p != nil {

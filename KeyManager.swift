@@ -92,6 +92,26 @@ class KeyManager {
         }
     }
     
+    class func generateKeyPair(keyTag : String , keyType : String) -> [String : SecKey]? {
+        let tag = keyTag.data(using: .utf8)
+        var keysResult : [String : SecKey] = [:]
+        let attributes : [String : Any] = [ kSecAttrKeyType as String : keyType,
+                                             kSecAttrKeySizeInBits as String : 2048,
+                                             kSecPrivateKeyAttrs as String : [kSecAttrIsPermanent as String : true,
+                                                                              kSecAttrApplicationTag as String : keyTag ]
+                                            ]
+        //kSecattrIsPermanent == true -> store the keychain in the default keychain while creating it, use the application tag to retrieve it from keychain later
+        var error : Unmanaged<CFError>?
+        guard let privateKey = SecKeyCreateRandomKey(attributes as CFDictionary, &error) else {
+            print(error.debugDescription)
+            return nil
+        }
+        keysResult["private"] = privateKey
+        keysResult["public"] = SecKeyCopyPublicKey(privateKey)
+        
+        return keysResult
+    }
+    
     func getKeyFromPEM() -> SecKey? {
         var keyInString : String?
         do{
@@ -174,13 +194,36 @@ class KeyManager {
     }
     
     private func base64UrlToBase64(base64url : String) -> String {
-        var base64 = base64url.replacingOccurrences(of: "-", with: "+")
+        let base64 = base64url.replacingOccurrences(of: "-", with: "+")
                              .replacingOccurrences(of: "_", with: "/")
         /* NO PADDING
         while(base64.count % 4 != 0){
             base64.append("=")
         }*/
         return base64
+    }
+    
+    private func base64ToBase64Url(base64: String) -> String {
+        let base64url = base64.replacingOccurrences(of: "+", with: "-")
+                            .replacingOccurrences(of: "/", with: "_")
+        return base64url
+    }
+    
+    func pemToJWK(pemData : Data) -> [String: String]{
+        var jwk : [String : String] = [:]
+        print("LAST INDEX : \(pemData.endIndex.hashValue)")
+        let rangeModulus : Range<Int> = 9..<265
+        let rangeExponent : Range<Int> = Int(267)..<pemData.endIndex.hashValue
+        //rangeExponent
+        print("DATA SIZE :  \(pemData.count),",pemData.base64EncodedString())
+        let subdataMod = pemData.subdata(in: rangeModulus)
+        let subdataEx = pemData.subdata(in: rangeExponent)
+        print("MOD HEX : \(subdataMod.hexDescription)")
+        print("EX HEX : \(subdataEx.hexDescription)")
+        jwk["n"] = base64ToBase64Url(base64: subdataMod.base64EncodedString().clearPaddding() )
+        jwk["e"] = base64ToBase64Url(base64: subdataEx.base64EncodedString().clearPaddding() )
+        
+        return jwk
     }
     
     

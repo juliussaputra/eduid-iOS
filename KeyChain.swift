@@ -47,6 +47,25 @@ class KeyChain {
         }
     }
     
+    static func deleteKey(tagString : String) -> Bool {
+        
+        let tag = tagString.data(using: .utf8)
+        let getQuery : [String : Any] = [
+            kSecClass as String : kSecClassKey,
+            kSecAttrApplicationTag as String : tag!,
+            kSecReturnRef as String : true,
+            kSecAttrKeyType as String : kSecAttrKeyTypeRSA
+        ]
+        
+        let status = SecItemDelete(getQuery as CFDictionary)
+        
+        if status == noErr {
+            return true
+        } else {
+            return false
+        }
+    }
+    
     class func createUniqueID() -> String {
         let uuid : CFUUID = CFUUIDCreate(nil)
         let cfStr : CFString = CFUUIDCreateString(nil, uuid)

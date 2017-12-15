@@ -41,6 +41,10 @@ class JWS{
         return result
     }
     
+//    kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA256
+//    - RSA signature with PKCS#1 padding, input data must be SHA-256 generated digest.
+//    kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA256
+//    - RSA signature with PKCS#1 padding, SHA-256 digest is generated from input data of any size.
     func verify(header :  [String : Any] , payload :[String: Any] , signature: inout String, key : SecKey ) -> Bool {
         var result : Bool = false
         while(signature.count%4 != 0){
