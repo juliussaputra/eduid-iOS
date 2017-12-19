@@ -13,6 +13,15 @@ import Security
 class KeyManager {
     
     private var resourcePath : String?
+    private let tagServer = "eduid.server.pubID"
+    private let tagSessionPub  = "eduid.session.pubID"
+    private let tagSessionPriv = "eduid.session.privID"
+    private let tagAppPub = "eduid.app.pubID"
+    private let tagAppPriv = "eduid.app.privID"
+    
+    init() {
+        resourcePath = ""
+    }
     
     init(resourcePath : String){
         self.resourcePath = resourcePath
@@ -23,7 +32,7 @@ class KeyManager {
         self.resourcePath = path
     }
     
-    func  getPublicKey () -> SecKey? {
+    func  getPublicKeyFromBundle () -> SecKey? {
         
         let certData = NSData(contentsOfFile: resourcePath!)
         let cert = SecCertificateCreateWithData(nil, certData! as CFData)
@@ -47,7 +56,7 @@ class KeyManager {
         return publicKey
     }
     
-    func getCertificate() -> SecCertificate? {
+    func getCertificateFromBundle() -> SecCertificate? {
         
         if let data = NSData(contentsOfFile: resourcePath!) {
             
@@ -57,8 +66,8 @@ class KeyManager {
         }
         return nil
     }
-    
-    func getPrivateKey() -> SecKey? {
+    //PKCS 12 format
+    func getPrivateKeyFromBundle() -> SecKey? {
         
         let data = NSData(contentsOfFile: resourcePath!)
         
@@ -80,7 +89,7 @@ class KeyManager {
         return privateKey
     }
     
-    func cutHeaderFooterPem (certString : inout String) {
+    private func cutHeaderFooterPem (certString : inout String) {
         //CUT HEADER AND TAIL FROM PEM KEY
         let offset = ("-----BEGIN RSA PRIVATE KEY-----").count
         let index = certString.index(certString.startIndex, offsetBy: offset+1)
@@ -96,10 +105,10 @@ class KeyManager {
         let tag = keyTag.data(using: .utf8)
         var keysResult : [String : SecKey] = [:]
         let attributes : [String : Any] = [ kSecAttrKeyType as String : keyType,
-                                             kSecAttrKeySizeInBits as String : 2048,
-                                             kSecPrivateKeyAttrs as String : [kSecAttrIsPermanent as String : true,
-                                                                              kSecAttrApplicationTag as String : keyTag ]
-                                            ]
+                                            kSecAttrKeySizeInBits as String : 2048,
+                                            kSecPrivateKeyAttrs as String : [kSecAttrIsPermanent as String : true,
+                                                                             kSecAttrApplicationTag as String : keyTag ]
+        ]
         //kSecattrIsPermanent == true -> store the keychain in the default keychain while creating it, use the application tag to retrieve it from keychain later
         var error : Unmanaged<CFError>?
         guard let privateKey = SecKeyCreateRandomKey(attributes as CFDictionary, &error) else {
@@ -111,8 +120,8 @@ class KeyManager {
         
         return keysResult
     }
-    
-    func getKeyFromPEM() -> SecKey? {
+    //get RSA private key from pem data
+    func getPrivateKeyFromPEM() -> SecKey? {
         var keyInString : String?
         do{
             keyInString = try String(contentsOfFile: resourcePath!)
@@ -125,7 +134,7 @@ class KeyManager {
         
         let data = NSData(base64Encoded: keyInString!, options: NSData.Base64DecodingOptions.ignoreUnknownCharacters)
         print("BEFORE CUT : " , data!)
-        //        let range = NSRange.init(location: 26, length: (data?.length)! - 26)
+        //        let range = NSRange.initcation: 26, length: (data?.length)! - 26)
         //        let subdata = data?.subdata(with: range)
         
         print("DATA :" , data?.length as Any)
@@ -140,8 +149,13 @@ class KeyManager {
         return privateKey
     }
     
-    func jwksToPem() -> String? {
-        var dataFromPath = NSData(contentsOfFile: self.resourcePath!)
+    func jwksToPem(jwksSourceData : Data? = nil) -> String? {
+        var dataFromPath : Data?
+        if(jwksSourceData != nil){
+            dataFromPath = jwksSourceData
+        } else {
+            dataFromPath = NSData(contentsOfFile: self.resourcePath!) as Data?
+        }
         var jsonData : [String : Any]?
         var pemResult : String?
         do{
@@ -160,7 +174,7 @@ class KeyManager {
         }
         return pemResult
     }
-    
+    //TODO : make it private
     func jwkToPem(key : [String : String]) -> String? {
         
         var exponentStr = base64UrlToBase64(base64url: key["e"]!)
@@ -168,7 +182,7 @@ class KeyManager {
             exponentStr += "="
         }
         let exponentData = Data(base64Encoded: exponentStr)
-
+        
         var modulusStr = base64UrlToBase64(base64url: key["n"]!)
         while modulusStr.count % 4 != 0{
             modulusStr += "="
@@ -181,7 +195,7 @@ class KeyManager {
         
         return pemString
     }
-
+    
     private func  bytesCount (base64str : String) -> Int{
         
         var bitsCount = base64str.count * 6
@@ -195,21 +209,21 @@ class KeyManager {
     
     private func base64UrlToBase64(base64url : String) -> String {
         let base64 = base64url.replacingOccurrences(of: "-", with: "+")
-                             .replacingOccurrences(of: "_", with: "/")
+            .replacingOccurrences(of: "_", with: "/")
         /* NO PADDING
-        while(base64.count % 4 != 0){
-            base64.append("=")
-        }*/
+         while(base64.count % 4 != 0){
+         base64.append("=")
+         }*/
         return base64
     }
     
     private func base64ToBase64Url(base64: String) -> String {
         let base64url = base64.replacingOccurrences(of: "+", with: "-")
-                            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "/", with: "_")
         return base64url
     }
     
-    func pemToJWK(pemData : Data) -> [String: String]{
+    func pemToJWK(pemData : Data , kid: String? = nil) -> [String: String]{
         var jwk : [String : String] = [:]
         print("LAST INDEX : \(pemData.endIndex.hashValue)")
         let rangeModulus : Range<Int> = 9..<265
@@ -222,8 +236,49 @@ class KeyManager {
         print("EX HEX : \(subdataEx.hexDescription)")
         jwk["n"] = base64ToBase64Url(base64: subdataMod.base64EncodedString().clearPaddding() )
         jwk["e"] = base64ToBase64Url(base64: subdataEx.base64EncodedString().clearPaddding() )
+        jwk["kty"] = "RSA"
+        if kid == nil {
+            jwk["kid"] =  KeyManager.createKID(jwkDict: jwk)
+        } else {
+            jwk["kid"] = kid
+        }
         
         return jwk
+    }
+    
+    class func createKID(jwkDict : [String: String]) -> String? {
+        var kid : String?
+        var jsonString : String?
+        if jwkDict.keys.contains("e") && jwkDict.keys.contains("kty") && jwkDict.keys.contains("n") {
+            
+            jsonString = "{\"e\":\"\(jwkDict["e"]!)\",\"kty\":\"\(jwkDict["kty"]!)\",\"n\":\"\(jwkDict["n"]!)\"}" as String!
+            print("string :" , jsonString!)
+            var byteArray = [UInt8]()
+            for char in jsonString!.utf8 {
+                byteArray += [char]
+            }
+            print(byteArray)
+            let kidArray = hashSHA256(bytes: Data.init(bytes: byteArray))
+            print(kidArray)
+            let kidData = Data(bytes: kidArray!)
+            return kidData.base64EncodedString().clearPaddding()
+        }
+        return nil
+    }
+    
+    private class func hashSHA256(bytes : Data) -> [UInt8]? {
+        var result : [UInt8] = [UInt8].init(repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        var digestData = Data(count: Int(CC_SHA256_DIGEST_LENGTH))
+        print(CC_SHA256_DIGEST_LENGTH)
+        _ = digestData.withUnsafeMutableBytes { digestBytes in
+            bytes.withUnsafeBytes{ messageBytes in
+                CC_SHA256(messageBytes, CC_LONG(bytes.count), digestBytes)
+            }
+        }
+        
+        digestData.copyBytes(to: &result, count: digestData.count)
+        
+        return result
     }
     
     
@@ -245,7 +300,7 @@ extension String{
             var char = UInt8 (ch)
             data.append(&char, count: 1)
         }
-//        let base64Str = data.base64EncodedString()
+        //        let base64Str = data.base64EncodedString()
         
         return data // base64Str.clearPaddding()
     }
@@ -254,6 +309,14 @@ extension String{
         var tmp = self
         while(tmp.last == "="){
             tmp.removeLast()
+        }
+        return tmp
+    }
+    
+    public func addPadding() -> String {
+        var tmp = self
+        while(tmp.count % 4 != 0){
+            tmp.append("=")
         }
         return tmp
     }

@@ -20,7 +20,7 @@ class KeyChain {
         let saveQuery = [
             kSecClass as String : kSecClassKey as String,
             kSecAttrApplicationTag as String : tag!,
-            kSecValueRef as String : key
+            kSecValueRef as String : key,
         ] as [String : Any]
         // delete the old key if it does exist
         let stats = SecItemDelete(saveQuery as CFDictionary)
