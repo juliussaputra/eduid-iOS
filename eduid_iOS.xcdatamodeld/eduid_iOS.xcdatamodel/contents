@@ -19,7 +19,7 @@
     </entity>
     <entity name="Tokens" representedClassName="Tokens" syncable="YES" codeGenerationType="class">
         <attribute name="accessToken" optional="YES" attributeType="String" syncable="YES"/>
-        <attribute name="exp" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="exp" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="id_token" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="tokenType" optional="YES" attributeType="String" syncable="YES"/>
     </entity>

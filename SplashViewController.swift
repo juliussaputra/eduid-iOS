@@ -12,12 +12,13 @@ class SplashViewController: UIViewController {
 
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
-    var configModel = EduidConfigModel(serverUrl: URL(string: "https://eduid.htwchur.ch/oidc/.well-known/openid-configuration")!)
+    var configModel : EduidConfigModel?
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        let reqUrl  = URL(string: "https://eduid.htwchur.ch/oidc/.well-known/openid-configuration")
+        configModel = EduidConfigModel(serverUrl: reqUrl)
 //        let storyboard = self.storyboard
 //        let navigationController : UINavigationController = storyboard?.instantiateViewController(withIdentifier: "NController") as! UINavigationController
 //        self.view.addSubview((navigationController.view)!)
@@ -34,13 +35,14 @@ class SplashViewController: UIViewController {
         super.viewDidAppear(animated)
         
         self.showBusyUI()
-        configModel.deleteAll()
-        configModel.fetchServer()
+        
+        configModel?.deleteAll()
+        configModel?.fetchServer()
         var timeoutCounter = 0
         let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timerTmp in
             timeoutCounter += 1
             print(timeoutCounter)
-            if self.configModel.configDownloaded  {
+            if (self.configModel?.configDownloaded)!  {
                 timerTmp.invalidate()
                 self.downloadFinished()
             } else if timeoutCounter == 5 {

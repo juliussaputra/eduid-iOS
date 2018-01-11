@@ -135,7 +135,7 @@ class LoginViewController: UIViewController {
     
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier  != "toLogin" {
+        if segue.identifier  != "toProfile" {
             return
         }
         
@@ -143,6 +143,7 @@ class LoginViewController: UIViewController {
             return
         }
         profileVC.token = self.tokenModel
+        profileVC.textLabel = usernameTF.text
     }
     
     func loginSuccessful(){

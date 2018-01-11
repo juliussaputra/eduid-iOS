@@ -68,13 +68,13 @@ class TokenModel : NSObject {
         self.tokenType = jsonResponse!["token_type"] as? String
         
     }
-    
+    //TODO : why save "expired" in database model as Integer 64 result a crash
     func save() {
         let entity = NSEntityDescription.entity(forEntityName: "Tokens", in: self.managedContext!) as NSEntityDescription!
         let tokenData = NSManagedObject(entity: entity!, insertInto: managedContext)
         
         tokenData.setValue(accesToken, forKey: "accessToken")
-        tokenData.setValue(expired, forKey: "exp")
+        tokenData.setValue(String(describing: expired), forKey: "exp")
         tokenData.setValue(id_token, forKey: "id_token")
 //        tokenData.setValue(refreshToken, forKey: "refreshToken")
         tokenData.setValue(tokenType, forKey: "tokenType")
@@ -198,9 +198,14 @@ class TokenModel : NSObject {
         return resultArray.joined(separator: "&")
     }
     
-    func giveIdTokenJWS() -> [String : Any]{
-        let jwsToParse = self.jsonResponse!["id_token"] as! String
-        return JWS.parseJWSpayload(stringJWS: jwsToParse)
+    func giveIdTokenJWS() -> [String : Any]?{
+        guard let jwsToParse : String = self.jsonResponse!["id_token"] as! String else {
+            return nil
+        }
+        guard let result : [String : Any] = JWS.parseJWSpayload(stringJWS: jwsToParse) else {
+            return nil
+        }
+        return result
     }
     
 }
@@ -224,6 +229,7 @@ extension TokenModel : URLSessionDataDelegate {
         do{
             let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as! [String : Any]
             print(jsonResponse)
+            self.jsonResponse = jsonResponse
             self.tokenDownloaded = true
         } catch {
             print(error.localizedDescription)
