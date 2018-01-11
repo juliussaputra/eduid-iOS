@@ -34,32 +34,22 @@ class EduidConfigModel : NSObject {
     private var claims : [String]?
     //private var grantSupported : Bool?
     
-    override init() {
+    var serverUrl : URL?
+    var configDownloaded = false
+    var totalSize : String?
+    
+    init(serverUrl : URL? = nil) {
         super.init()
         //        self.appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
-        self.persistentContainer = createContainer()
+        self.persistentContainer = SharedDataStore.getPersistentContainer()
         self.managedContext = persistentContainer?.viewContext
+        
+        self.serverUrl = serverUrl
+        
+        //defer would be called at the end of this init()
         defer{ self.fetchDatabase() }
     }
     
-    
-    private func createContainer () -> NSPersistentContainer {
-        let container = NSPersistentContainer(name: "eduid_iOS")
-        let storeUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.htwchur.eduid.share")?.appendingPathComponent("eduid_iOS.sqlite")
-        print(storeUrl?.absoluteString ?? "no url for container found" )
-        let description = NSPersistentStoreDescription()
-        description.shouldInferMappingModelAutomatically = true
-        description.shouldMigrateStoreAutomatically = true
-        description.url = storeUrl
-        
-        container.persistentStoreDescriptions = [NSPersistentStoreDescription(url: storeUrl!)]
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-            if let error = error as NSError? {
-                fatalError("Unresolved error \(error) , \(error.userInfo)")
-            }
-        })
-        return container
-    }
     
     func delete(name : String) {
         let indexHelper = searchData(name: name)
@@ -88,9 +78,20 @@ class EduidConfigModel : NSObject {
         }catch let error as NSError {
             print("Delete Failed : \(error) , \(error.userInfo)")
         }
+        
+        self.issuer = nil
+        self.auth = nil
+        self.endSession = nil
+        self.userInfo = nil
+        self.introspection = nil
+        self.token = nil
+        self.revocation = nil
+        self.jwksUri = nil
+        
+        self.configDownloaded = false
     }
     
-    func extractingJson (){
+    func extractJson (){
         
         self.issuer = jsonDict?["issuer"] as? String
         self.auth = URL(string: jsonDict?["authorization_endpoint"] as! String)
@@ -115,10 +116,12 @@ class EduidConfigModel : NSObject {
     }
     
     //Fetch config data from the EDU-ID Server
-    func fetchServer(serverUrl : URL) {
+    func fetchServer() {
+        
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-        let dataTask = session.dataTask(with: serverUrl)
+        let dataTask = session.dataTask(with: self.serverUrl!)
         dataTask.resume()
+        
     }
     
     //Fetch data from core data, usually used at the begining
@@ -129,7 +132,7 @@ class EduidConfigModel : NSObject {
         } catch let error as NSError {
             print("Couldn't fetch the data. \(error), \(error.userInfo)")
         }
-        print("FETCHED : " , self.entities.count )
+        print("FETCHED (fetchDatabase) : " , self.entities.count )
         //assuming there is just one config data in core data
         if(entities.count > 0) {
             let entity = entities.first
@@ -178,7 +181,19 @@ class EduidConfigModel : NSObject {
         
     }
     
+    func getTokenEndpoint () -> URL? {
+        if(self.token == nil){
+            return nil
+        }
+        return self.token!
+    }
     
+    func getIssuer () -> String? {
+        if self.issuer == nil {
+            return nil
+        }
+        return self.issuer
+    }
     
     func printAllData () {
         for confData in entities{
@@ -208,7 +223,7 @@ class EduidConfigModel : NSObject {
         
         do{
             try managedContext!.save()
-            print("SAVED")
+            print("CONFIGDATA SAVED")
         } catch let error as NSError {
             print("Couldn't save the data. \(error), \(error.userInfo)")
         }
@@ -231,9 +246,44 @@ class EduidConfigModel : NSObject {
         return result
     }
     
+}
+
+extension EduidConfigModel : URLSessionDownloadDelegate {
     
     
     
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        print("FINISHED")
+    }
+    
+    
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        if self.serverUrl != downloadTask.originalRequest?.url {
+            return
+        }
+        
+//        self.progress = Float(totalBytesWritten) / Float(totalBytesExpectedToWrite)
+//        print(self.progress)
+        self.totalSize = ByteCountFormatter.string(fromByteCount: totalBytesExpectedToWrite, countStyle: .file)
+    }
+    
+}
+
+
+extension URLSession{
+    
+    
+    
+    func sendSynchronousRequest(url : URL, completionHandler : @escaping (NSData?, URLResponse?, Error?) -> Void ) {
+        
+        let semaphore = DispatchSemaphore.init(value: 0)
+        let task = self.dataTask(with: url) { (data, response, error) in
+            completionHandler(data! as NSData, response, error)
+            semaphore.signal()
+        }
+        task.resume()
+        let _ = semaphore.wait(timeout: DispatchTime.init(uptimeNanoseconds: 5000000000)) //5 seconds (in nanosec)
+    }
     
 }
 
@@ -251,7 +301,6 @@ extension EduidConfigModel : URLSessionDataDelegate {
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         print("Did receive data , data length: " , data.count)
-        
         do{
             jsonDict = try JSONSerialization.jsonObject(with: data, options: []) as? [String : Any]
         } catch{
@@ -263,9 +312,11 @@ extension EduidConfigModel : URLSessionDataDelegate {
         for type in supportedTypes{
             //print(type , " contain bearer : " , type.contains("jwt-bearer"))
             if type.contains("jwt-bearer") {
-                extractingJson()
+                extractJson()
                 save()
             }
         }
+        self.configDownloaded = true
     }
 }
+

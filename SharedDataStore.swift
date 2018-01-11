@@ -16,11 +16,14 @@ class SharedDataStore : NSObject {
     var persistentStoreCoordinator : NSPersistentStoreCoordinator?
     var persistentStore : NSPersistentStore?
     
-    let Shared_Group_Context = "group.mobinaut.test"
+    private static var persistentContainer : NSPersistentContainer = setupContainer()
+    
+    let Shared_Group_Context = "group.htwchur.eduid.share"
     
     override init() {
         super.init()
-        setupCoreData()
+//        setupCoreData()
+//        self.persistentContainer =  setupContainer()
     }
     
     func setupCoreData() {
@@ -30,6 +33,28 @@ class SharedDataStore : NSObject {
         self.managedObjectContext?.persistentStoreCoordinator = self.persistentStoreCoordinator
         
         
+    }
+    
+    static func setupContainer () -> NSPersistentContainer {
+        let container = NSPersistentContainer(name: "eduid_iOS")
+        let storeUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.htwchur.eduid.share")?.appendingPathComponent("eduid_iOS.sqlite")
+        print(storeUrl?.absoluteString ?? "no url for container found" )
+        let description = NSPersistentStoreDescription()
+        description.shouldInferMappingModelAutomatically = true
+        description.shouldMigrateStoreAutomatically = true
+        description.url = storeUrl
+        
+        container.persistentStoreDescriptions = [NSPersistentStoreDescription(url: storeUrl!)]
+        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+            if let error = error as NSError? {
+                fatalError("Unresolved error \(error) , \(error.userInfo)")
+            }
+        })
+        return container
+    }
+    
+    static func getPersistentContainer () -> NSPersistentContainer {
+        return self.persistentContainer
     }
     
 }
