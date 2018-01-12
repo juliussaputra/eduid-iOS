@@ -33,7 +33,7 @@ class TokenModel : NSObject {
     //    private var grant_type = "urn%3Aietf%3Aparamsurn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer"
     let grant_type = "urn:ietf:params:oauth:grant-type:jwt-bearer"
     
-    var tokenDownloaded : Bool = false
+    var tokenDownloaded : Bool?
     
     init( tokenURI : URL ) {
         super.init()
@@ -53,6 +53,17 @@ class TokenModel : NSObject {
         }catch {
             print("Delete Failed : \(error) , \(error.localizedDescription)")
         }
+        deleteCurrent()
+    }
+    
+    private func deleteCurrent () {
+        self.accesToken = nil
+        self.refreshToken = nil
+        self.expired = nil
+        self.id_token = nil
+        self.tokenType = nil
+        self.jsonResponse = nil
+        self.tokenDownloaded = nil
     }
     
     func extractJson() {
@@ -113,15 +124,13 @@ class TokenModel : NSObject {
                       "assertion" : assertionBody,
                       "scope" : "openid \(username) julius.saputra@htwchur.ch"
                       ]
-//        do{
+
             request.httpMethod = "POST"
             request.httpBody = httpBodyBuilder(dict: body).data(using: .utf8)
             request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             request.addValue("Basic \(base64loginString)" , forHTTPHeaderField: "Authorization")
-//        }catch {
-//            print("error on creating url request, \(error.localizedDescription)")
-//        }
-        
+
+        self.tokenDownloaded = nil
         let dataTask  = session.dataTask(with: request as URLRequest)
         dataTask.resume()
         
@@ -199,12 +208,14 @@ class TokenModel : NSObject {
     }
     
     func giveIdTokenJWS() -> [String : Any]?{
-        guard let jwsToParse : String = self.jsonResponse!["id_token"] as! String else {
+        guard let jwsToParse : String = self.jsonResponse!["id_token"] as? String else {
             return nil
         }
+        
         guard let result : [String : Any] = JWS.parseJWSpayload(stringJWS: jwsToParse) else {
             return nil
         }
+        
         return result
     }
     
@@ -218,6 +229,7 @@ extension TokenModel : URLSessionDataDelegate {
         print("Did receive response with status : \(httpResponse.statusCode)")
         if(httpResponse.statusCode != 200){
             print("Response : \(httpResponse.description)" )
+            self.tokenDownloaded = false
             return
         }
         completionHandler(URLSession.ResponseDisposition.allow)

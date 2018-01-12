@@ -13,6 +13,7 @@ class ProfileViewController: UIViewController {
     
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var profileLabel: UILabel!
+    @IBOutlet weak var logoutButton: UIButton!
     
     var textLabel : String?
     var token : TokenModel?
@@ -29,6 +30,8 @@ class ProfileViewController: UIViewController {
         
         profileLabel.text = textLabel!
         tableView.delegate = self
+        tableView.rowHeight = UITableViewAutomaticDimension
+        logoutButton.backgroundColor = UIColor.black
         // Do any additional setup after loading the view.
     }
     
@@ -37,6 +40,24 @@ class ProfileViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    func giveData(row : Int) -> [String] {
+        var result = [String]()
+        let keys = Array(id_Token!.keys)
+        if(row < keys.count){
+            result.append(keys[row])
+            result.append(id_Token![keys[row] ] as! String )
+        }
+        return result
+    }
+    
+    @IBAction func logout(_ sender: Any) {
+        self.navigationController?.popViewController(animated: true)
+        self.token = nil
+        
+        let loginVC = self.navigationController?.visibleViewController as! LoginViewController
+        loginVC.tokenModel?.deleteAll()
+        
+    }
 }
 
 extension ProfileViewController: UITableViewDelegate, UITableViewDataSource {
@@ -46,14 +67,15 @@ extension ProfileViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print("TAPPED row : \(indexPath.count)")
+        print("TAPPED row : \(indexPath.row)")
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = UITableViewCell(style: .value2, reuseIdentifier: "cell")
-        cell.textLabel?.text = "AA"
-        cell.detailTextLabel?.text = "BB"
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell") as! ExpandTableViewCell
+        let dataForRow = giveData(row: indexPath.row)
+        cell.titleLabel.text = dataForRow.first
+        cell.detailLabel.text = dataForRow.last
         
         return cell
     }

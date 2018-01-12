@@ -37,6 +37,12 @@ class SplashViewController: UIViewController {
         self.showBusyUI()
         
         configModel?.deleteAll()
+        downloadConfig()
+        
+    }
+    
+    func downloadConfig() {
+        
         configModel?.fetchServer()
         var timeoutCounter = 0
         let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timerTmp in
@@ -65,8 +71,10 @@ class SplashViewController: UIViewController {
 
     func downloadFinished () {
         let loginVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC")
-//        self.storyboard.navi
-        self.present(loginVC!, animated: true, completion: nil)
+        let navController = UINavigationController.init(rootViewController: loginVC!)
+        navController.navigationBar.isHidden = true
+        self.present(navController, animated: true, completion: nil)
+        
     }
     
     func showBusyUI() {
@@ -81,7 +89,10 @@ class SplashViewController: UIViewController {
     func showAlertUI(){
         
         let alert = UIAlertController(title: "Timeout", message: "Please check your internet connection and reopen the app", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Close App", style: .default, handler: { (alertAction) in
+        alert.addAction(UIAlertAction(title: "Try Again", style: .default, handler: { (alertAction) in
+            self.downloadConfig()
+        }))
+        alert.addAction(UIAlertAction(title: "Close", style: .default, handler: { (alertAction) in
             UIControl().sendAction(#selector(NSXPCConnection.suspend), to: UIApplication.shared, for: nil)
         }))
         self.present(alert, animated: true, completion: nil)
