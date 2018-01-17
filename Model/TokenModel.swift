@@ -43,106 +43,6 @@ class TokenModel : NSObject {
         self.managedContext = self.persistentContainer?.viewContext
     }
     
-    func deleteAll() {
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: "Tokens")
-        let req = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-        
-        do{
-            try managedContext?.execute(req)
-            try managedContext?.save()
-        }catch {
-            print("Delete Failed : \(error) , \(error.localizedDescription)")
-        }
-        deleteCurrent()
-    }
-    
-    private func deleteCurrent () {
-        self.accesToken = nil
-        self.refreshToken = nil
-        self.expired = nil
-        self.id_token = nil
-        self.tokenType = nil
-        self.jsonResponse = nil
-        self.tokenDownloaded = nil
-    }
-    
-    func extractJson() {
-        if jsonResponse == nil {
-            print("JSON RESPONSE is empty!")
-            return
-        }
-        //print(jsonResponse?.keys)
-        self.id_token = jsonResponse!["id_token"] as? String
-        self.accesToken = jsonResponse!["access_token"] as? String
-        self.expired = jsonResponse!["expires_in"] as? Int
-        print(self.expired!)
-        self.tokenType = jsonResponse!["token_type"] as? String
-        
-    }
-    //TODO : why save "expired" in database model as Integer 64 result a crash
-    func save() {
-        let entity = NSEntityDescription.entity(forEntityName: "Tokens", in: self.managedContext!) as NSEntityDescription!
-        let tokenData = NSManagedObject(entity: entity!, insertInto: managedContext)
-        
-        tokenData.setValue(accesToken, forKey: "accessToken")
-        tokenData.setValue(String(describing: expired), forKey: "exp")
-        tokenData.setValue(id_token, forKey: "id_token")
-//        tokenData.setValue(refreshToken, forKey: "refreshToken")
-        tokenData.setValue(tokenType, forKey: "tokenType")
-        
-        do{
-            try managedContext?.save()
-            print("TOKEN SAVED")
-        }catch{
-            print("Couldn't save the token data. \(error) , \(error.localizedDescription)")
-        }
-    }
-    
-    func fetchDatabase(){
-        let fetchRequest = NSFetchRequest<NSManagedObject>.init(entityName: "Tokens")
-        do{
-            entities = (try managedContext?.fetch(fetchRequest))!
-        } catch{
-            print("Couldn't fetch the data. \(error), \(error.localizedDescription)")
-        }
-        print("Token Fetched (fetchDatabase) : " , self.entities.count)
-        if(entities.count > 0 ) {
-            let entity = entities.first
-            extractDatabaseData(savedData: entity!)
-        }
-        
-    }
-    
-    func fetchServer(username : String , password : String, assertionBody : String) {
-        let request  = NSMutableURLRequest(url: self.tokenURI!)
-        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-        
-        let loginString = String.init(format: "%@:%@", username, password)
-        let loginData = loginString.data(using: .utf8)!
-        let base64loginString  = loginData.base64EncodedString().clearPaddding()
-        let body  = [ "grant_type" : self.grant_type ,
-                      "assertion" : assertionBody,
-                      "scope" : "openid \(username) julius.saputra@htwchur.ch"
-                      ]
-
-            request.httpMethod = "POST"
-            request.httpBody = httpBodyBuilder(dict: body).data(using: .utf8)
-            request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-            request.addValue("Basic \(base64loginString)" , forHTTPHeaderField: "Authorization")
-
-        self.tokenDownloaded = nil
-        let dataTask  = session.dataTask(with: request as URLRequest)
-        dataTask.resume()
-        
-    }
-    
-    func extractDatabaseData(savedData : NSManagedObject){
-        self.accesToken = savedData.value(forKey: "accessToken") as? String
-//        self.refreshToken = savedData.value(forKey: "refreshToken") as? String
-        self.expired = savedData.value(forKey: "exp") as? Int
-        self.id_token = savedData.value(forKey: "id_token") as? String
-        self.tokenType = savedData.value(forKey: "tokenType") as? String
-    }
     
     func createClientAssertion (receiver : String, keyToSign : Key) -> String {
         
@@ -193,6 +93,88 @@ class TokenModel : NSObject {
         return jwt.sign(key: keyToSign, alg: .RS256)
     }
     
+    func deleteAll() {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: "Tokens")
+        let req = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        do{
+            try managedContext?.execute(req)
+            try managedContext?.save()
+        }catch {
+            print("Delete Failed : \(error) , \(error.localizedDescription)")
+        }
+        deleteCurrent()
+    }
+    
+    private func deleteCurrent () {
+        self.accesToken = nil
+        self.refreshToken = nil
+        self.expired = nil
+        self.id_token = nil
+        self.tokenType = nil
+        self.jsonResponse = nil
+        self.tokenDownloaded = nil
+    }
+    
+    func extractDatabaseData(savedData : NSManagedObject){
+        self.accesToken = savedData.value(forKey: "accessToken") as? String
+        //        self.refreshToken = savedData.value(forKey: "refreshToken") as? String
+        self.expired = savedData.value(forKey: "exp") as? Int
+        self.id_token = savedData.value(forKey: "id_token") as? String
+        self.tokenType = savedData.value(forKey: "tokenType") as? String
+    }
+    
+    func extractJson() {
+        if jsonResponse == nil {
+            print("JSON RESPONSE is empty!")
+            return
+        }
+        //print(jsonResponse?.keys)
+        self.id_token = jsonResponse!["id_token"] as? String
+        self.accesToken = jsonResponse!["access_token"] as? String
+        self.expired = jsonResponse!["expires_in"] as? Int
+        print(self.expired!)
+        self.tokenType = jsonResponse!["token_type"] as? String
+        
+    }
+    
+    func fetchDatabase(){
+        let fetchRequest = NSFetchRequest<NSManagedObject>.init(entityName: "Tokens")
+        do{
+            entities = (try managedContext?.fetch(fetchRequest))!
+        } catch{
+            print("Couldn't fetch the data. \(error), \(error.localizedDescription)")
+        }
+        print("Token Fetched (fetchDatabase) : " , self.entities.count)
+        if(entities.count > 0 ) {
+            let entity = entities.first
+            extractDatabaseData(savedData: entity!)
+        }
+    }
+    
+    func fetchServer(username : String , password : String, assertionBody : String) {
+        let request  = NSMutableURLRequest(url: self.tokenURI!)
+        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+        
+        let loginString = String.init(format: "%@:%@", username, password)
+        let loginData = loginString.data(using: .utf8)!
+        let base64loginString  = loginData.base64EncodedString().clearPaddding()
+        let body  = [ "grant_type" : self.grant_type ,
+                      "assertion" : assertionBody,
+                      "scope" : "openid \(username) julius.saputra@htwchur.ch"
+        ]
+        
+        request.httpMethod = "POST"
+        request.httpBody = httpBodyBuilder(dict: body).data(using: .utf8)
+        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.addValue("Basic \(base64loginString)" , forHTTPHeaderField: "Authorization")
+        
+        self.tokenDownloaded = nil
+        let dataTask  = session.dataTask(with: request as URLRequest)
+        dataTask.resume()
+        
+    }
+    
     func httpBodyBuilder(dict : [String: Any]) -> String {
         var resultArray = [String]()
         
@@ -219,6 +201,36 @@ class TokenModel : NSObject {
         return result
     }
     
+    //TODO : why save "expired" in database model as Integer 64 result a crash
+    func save() {
+        let entity = NSEntityDescription.entity(forEntityName: "Tokens", in: self.managedContext!) as NSEntityDescription!
+        let tokenData = NSManagedObject(entity: entity!, insertInto: managedContext)
+        
+        tokenData.setValue(accesToken, forKey: "accessToken")
+        tokenData.setValue(String(describing: expired), forKey: "exp")
+        tokenData.setValue(id_token, forKey: "id_token")
+        //        tokenData.setValue(refreshToken, forKey: "refreshToken")
+        tokenData.setValue(tokenType, forKey: "tokenType")
+        
+        do{
+            try managedContext?.save()
+            print("TOKEN SAVED")
+        }catch{
+            print("Couldn't save the token data. \(error) , \(error.localizedDescription)")
+        }
+    }
+    
+    func verifyIDToken() -> Bool {
+        let jws = JWS.init(payloadDict: ["" : ""])
+        let ks = KeyStore.init()
+        let pathToPubKey = Bundle.main.url(forResource: "eduid_pub", withExtension: "jwks")
+        let keys = ks.jwksToKeyFromBundle(jwksPath: (pathToPubKey?.relativePath)!)
+        let result = jws.verify(jwsToVerify: self.id_token!, key: (keys?.first)!)
+        
+        return result
+        
+    }
+    
 }
 
 extension TokenModel : URLSessionDataDelegate {
@@ -242,7 +254,12 @@ extension TokenModel : URLSessionDataDelegate {
             let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as! [String : Any]
             print(jsonResponse)
             self.jsonResponse = jsonResponse
-            self.tokenDownloaded = true
+            self.extractJson()
+            if self.verifyIDToken() {
+                self.tokenDownloaded = true
+            } else {
+                self.tokenDownloaded = false
+            }
         } catch {
             print(error.localizedDescription)
         }

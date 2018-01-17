@@ -45,17 +45,12 @@ class ProfileViewController: UIViewController {
         let keys = Array(id_Token!.keys)
         if(row < keys.count){
             result.append(keys[row])
-            result.append(id_Token![keys[row] ] as! String )
+            result.append( String(describing: id_Token![keys[row]]!) )
         }
         return result
     }
     
     @IBAction func logout(_ sender: Any) {
-        self.navigationController?.popViewController(animated: true)
-        self.token = nil
-        
-        let loginVC = self.navigationController?.visibleViewController as! LoginViewController
-        loginVC.tokenModel?.deleteAll()
         
     }
 }
@@ -63,7 +58,7 @@ class ProfileViewController: UIViewController {
 extension ProfileViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 4
+        return (self.id_Token?.count)!
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

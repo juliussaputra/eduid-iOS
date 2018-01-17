@@ -25,16 +25,17 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" hidesWhenStopped="YES" animating="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="9nF-Ro-A25">
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="9nF-Ro-A25">
                                 <rect key="frame" x="177" y="285" width="20" height="20"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </activityIndicatorView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstItem="pT4-mM-ARF" firstAttribute="leading" secondItem="MAm-2H-BEW" secondAttribute="leadingMargin" id="Njo-uF-T4A"/>
-                            <constraint firstItem="pT4-mM-ARF" firstAttribute="trailing" secondItem="MAm-2H-BEW" secondAttribute="trailingMargin" id="bvO-DG-gL6"/>
-                            <constraint firstItem="pT4-mM-ARF" firstAttribute="top" secondItem="yOA-WO-DE6" secondAttribute="top" constant="227" id="ccP-Vr-s7j"/>
+                            <constraint firstItem="9nF-Ro-A25" firstAttribute="top" secondItem="pT4-mM-ARF" secondAttribute="bottom" constant="8" symbolic="YES" id="4sW-bb-8yB"/>
+                            <constraint firstItem="pT4-mM-ARF" firstAttribute="leading" secondItem="MAm-2H-BEW" secondAttribute="leadingMargin" id="8gX-9g-eoD"/>
+                            <constraint firstItem="pT4-mM-ARF" firstAttribute="top" secondItem="yOA-WO-DE6" secondAttribute="top" constant="227" id="fSp-um-zNr"/>
+                            <constraint firstItem="pT4-mM-ARF" firstAttribute="trailing" secondItem="MAm-2H-BEW" secondAttribute="trailingMargin" id="gcx-pb-U6U"/>
+                            <constraint firstItem="pT4-mM-ARF" firstAttribute="centerX" secondItem="9nF-Ro-A25" secondAttribute="centerX" id="lHA-AN-FcN"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="yOA-WO-DE6"/>
                     </view>
@@ -170,7 +171,8 @@
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 </state>
                                 <connections>
-                                    <action selector="logout:" destination="HTe-IX-g0A" eventType="touchUpInside" id="MGx-nt-KZW"/>
+                                    <action selector="logout:" destination="HTe-IX-g0A" eventType="touchUpInside" id="jK7-Os-AMu"/>
+                                    <segue destination="yGN-BO-1xe" kind="show" identifier="toLogOut" id="iLz-LH-PRP"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -197,7 +199,67 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="95n-Ih-Xjv" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="709.60000000000002" y="769.56521739130437"/>
+            <point key="canvasLocation" x="790" y="780"/>
+        </scene>
+        <!--Logout View Controller-->
+        <scene sceneID="tTq-gF-0PS">
+            <objects>
+                <viewController id="yGN-BO-1xe" customClass="LogoutViewController" customModule="eduid_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="S33-hh-HrQ">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Logging out means also that all app authorizations will be rejected" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4iY-ep-dDv">
+                                <rect key="frame" x="16" y="101" width="343" height="367"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MhY-Xr-UzT">
+                                <rect key="frame" x="16" y="510" width="343" height="61"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="61" id="WeC-1g-yB4"/>
+                                </constraints>
+                                <state key="normal" title="Confirm Logout">
+                                    <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                </state>
+                                <connections>
+                                    <action selector="confirmLogout:" destination="yGN-BO-1xe" eventType="touchUpInside" id="wR7-eT-e7u"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Mv8-4a-MKx">
+                                <rect key="frame" x="16" y="579" width="343" height="35"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="35" id="4TH-sM-tQB"/>
+                                </constraints>
+                                <state key="normal" title="Cancel"/>
+                                <connections>
+                                    <action selector="cancelLogout:" destination="yGN-BO-1xe" eventType="touchUpInside" id="PmY-Tw-wgU"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="MhY-Xr-UzT" firstAttribute="leading" secondItem="Mv8-4a-MKx" secondAttribute="leading" id="9O4-YP-hO6"/>
+                            <constraint firstItem="4iY-ep-dDv" firstAttribute="leading" secondItem="MhY-Xr-UzT" secondAttribute="leading" id="G75-1h-pXh"/>
+                            <constraint firstItem="MhY-Xr-UzT" firstAttribute="trailing" secondItem="Mv8-4a-MKx" secondAttribute="trailing" id="GgZ-YI-YMR"/>
+                            <constraint firstItem="MhY-Xr-UzT" firstAttribute="top" secondItem="4iY-ep-dDv" secondAttribute="bottom" constant="42" id="VLj-sO-4R8"/>
+                            <constraint firstItem="Rd0-Vv-0ja" firstAttribute="bottom" secondItem="Mv8-4a-MKx" secondAttribute="bottom" constant="53" id="YS4-vT-Wna"/>
+                            <constraint firstItem="4iY-ep-dDv" firstAttribute="trailing" secondItem="S33-hh-HrQ" secondAttribute="trailingMargin" id="frR-Kk-9CZ"/>
+                            <constraint firstItem="Mv8-4a-MKx" firstAttribute="top" secondItem="MhY-Xr-UzT" secondAttribute="bottom" constant="8" symbolic="YES" id="gE6-ll-xfh"/>
+                            <constraint firstItem="4iY-ep-dDv" firstAttribute="trailing" secondItem="MhY-Xr-UzT" secondAttribute="trailing" id="pqi-hz-XfA"/>
+                            <constraint firstItem="4iY-ep-dDv" firstAttribute="leading" secondItem="S33-hh-HrQ" secondAttribute="leadingMargin" id="qvk-SX-P4K"/>
+                            <constraint firstItem="4iY-ep-dDv" firstAttribute="top" secondItem="Rd0-Vv-0ja" secondAttribute="top" constant="37" id="rKJ-Ec-GBv"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="Rd0-Vv-0ja"/>
+                    </view>
+                    <connections>
+                        <outlet property="confirmLogOutButton" destination="MhY-Xr-UzT" id="3Ao-vg-DuW"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Hgt-fC-Dnt" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="789.60000000000002" y="1463.1184407796104"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="Rhw-OR-vzY">

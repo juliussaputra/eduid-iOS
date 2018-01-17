@@ -156,9 +156,11 @@ class LoginViewController: UIViewController {
         }
         profileVC.token = self.tokenModel
         profileVC.textLabel = usernameTF.text
+//        self.navigationController?.pushViewController(profileVC, animated: true)
     }
     
     func loginSuccessful(){
+//        let segue = self.performSegue(withIdentifier: <#T##String#>, sender: <#T##Any?#>)
         self.performSegue(withIdentifier: "toProfile", sender: self)
     }
     
