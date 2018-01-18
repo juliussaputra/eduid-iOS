@@ -14,16 +14,16 @@ class SplashViewController: UIViewController {
     
     var configModel : EduidConfigModel?
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         let reqUrl  = URL(string: "https://eduid.htwchur.ch/oidc/.well-known/openid-configuration")
         configModel = EduidConfigModel(serverUrl: reqUrl)
-//        let storyboard = self.storyboard
-//        let navigationController : UINavigationController = storyboard?.instantiateViewController(withIdentifier: "NController") as! UINavigationController
-//        self.view.addSubview((navigationController.view)!)
         
-        
+        NotificationCenter.default.addObserver(self, selector: #selector(appearFromBackground), name: NSNotification.Name.UIApplicationWillEnterForeground , object: nil)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -41,6 +41,12 @@ class SplashViewController: UIViewController {
         
     }
     
+    @objc func appearFromBackground() {
+        print("appear from background")
+        downloadConfig()
+    }
+    
+    
     func downloadConfig() {
         
         configModel?.fetchServer()
@@ -51,7 +57,7 @@ class SplashViewController: UIViewController {
             if (self.configModel?.configDownloaded)!  {
                 timerTmp.invalidate()
                 self.downloadFinished()
-            } else if timeoutCounter == 5 {
+            } else if timeoutCounter == 3 {
                 self.showAlertUI()
                 timerTmp.invalidate()
             }

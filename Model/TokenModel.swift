@@ -27,7 +27,7 @@ class TokenModel : NSObject {
     
     
     private var jsonResponse : [String : Any]?
-    
+    private var id_tokenParsed : [[String : Any]]?
 //    public let issuer =
     private let client_assertion_type = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
     //    private var grant_type = "urn%3Aietf%3Aparamsurn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer"
@@ -35,7 +35,7 @@ class TokenModel : NSObject {
     
     var tokenDownloaded : Bool?
     
-    init( tokenURI : URL ) {
+    init( tokenURI : URL? = nil ) {
         super.init()
         
         self.tokenURI = tokenURI
@@ -122,6 +122,8 @@ class TokenModel : NSObject {
         self.expired = savedData.value(forKey: "exp") as? Int
         self.id_token = savedData.value(forKey: "id_token") as? String
         self.tokenType = savedData.value(forKey: "tokenType") as? String
+        
+        parseTokenID()
     }
     
     func extractJson() {
@@ -138,7 +140,7 @@ class TokenModel : NSObject {
         
     }
     
-    func fetchDatabase(){
+    func fetchDatabase()-> Bool{
         let fetchRequest = NSFetchRequest<NSManagedObject>.init(entityName: "Tokens")
         do{
             entities = (try managedContext?.fetch(fetchRequest))!
@@ -149,7 +151,11 @@ class TokenModel : NSObject {
         if(entities.count > 0 ) {
             let entity = entities.first
             extractDatabaseData(savedData: entity!)
+            return true
+        } else {
+            return false
         }
+        
     }
     
     func fetchServer(username : String , password : String, assertionBody : String) {
@@ -172,6 +178,24 @@ class TokenModel : NSObject {
         self.tokenDownloaded = nil
         let dataTask  = session.dataTask(with: request as URLRequest)
         dataTask.resume()
+        
+    }
+    
+    func giveTokenID() -> [[String : Any]]? {
+        return self.id_tokenParsed
+    }
+    
+    func giveTokenIDasJSON() -> Data? {
+        var jsonDict = [String:Any]()
+        jsonDict["header"] = id_tokenParsed?.first
+        jsonDict["payload"] = id_tokenParsed?.last
+        do{
+            let json = try JSONSerialization.data(withJSONObject: jsonDict, options: [])
+            return json
+        }catch {
+            print(error.localizedDescription)
+            return nil
+        }
         
     }
     
@@ -201,6 +225,12 @@ class TokenModel : NSObject {
         return result
     }
     
+    func parseTokenID () {
+        self.id_tokenParsed = [[String : Any]]()
+        id_tokenParsed?.append( JWS.parseJWSheader(stringJWS: self.id_token!)! )
+        id_tokenParsed?.append(JWS.parseJWSpayload(stringJWS: self.id_token!)!)
+    }
+    
     //TODO : why save "expired" in database model as Integer 64 result a crash
     func save() {
         let entity = NSEntityDescription.entity(forEntityName: "Tokens", in: self.managedContext!) as NSEntityDescription!
@@ -220,12 +250,42 @@ class TokenModel : NSObject {
         }
     }
     
+    func validateAccessToken () -> Bool {
+        if self.id_tokenParsed == nil &&  id_tokenParsed?.first!["alg"] as! String != "RS256" {
+            return false
+        }
+        print(id_tokenParsed?.first! as Any)
+        print(id_tokenParsed?.last! as Any)
+        print("at hash count : " , (id_tokenParsed?.last!["at_hash"] as! String).count )
+        
+//        let midIndex = accesToken?.index((accesToken?.startIndex)!, offsetBy: ((accesToken?.count)!/2) )
+//        let resultstr = String(accesToken![ ..<midIndex!]).base64ToBase64Url()
+//        let data = resultstr.data(using: .ascii)
+//
+//        let hash = data?.hashSHA256()
+//        let hashString = hash?.base64EncodedString()
+        
+        
+        let data = accesToken?.data(using: .utf8)
+        let hash = data?.hashSHA256()
+        let hashString = hash!.base64EncodedString()
+        let midIndex = hashString.index((hashString.startIndex), offsetBy: ((hashString.count)/2) )
+        let hashresult = String(hashString[ ..<midIndex]).base64ToBase64Url()
+        print("hash1 : " , hashresult)
+        
+        if id_tokenParsed?.last!["at_hash"] as! String == hashresult {
+            return true
+        } else {
+            return false
+        }
+    }
+    
     func verifyIDToken() -> Bool {
-        let jws = JWS.init(payloadDict: ["" : ""])
+        self.parseTokenID()
         let ks = KeyStore.init()
         let pathToPubKey = Bundle.main.url(forResource: "eduid_pub", withExtension: "jwks")
         let keys = ks.jwksToKeyFromBundle(jwksPath: (pathToPubKey?.relativePath)!)
-        let result = jws.verify(jwsToVerify: self.id_token!, key: (keys?.first)!)
+        let result = JWS.verify(jwsToVerify: self.id_token!, key: (keys?.first)!)
         
         return result
         
@@ -256,10 +316,12 @@ extension TokenModel : URLSessionDataDelegate {
             self.jsonResponse = jsonResponse
             self.extractJson()
             if self.verifyIDToken() {
+                let _ = validateAccessToken()
                 self.tokenDownloaded = true
             } else {
                 self.tokenDownloaded = false
             }
+            self.save()
         } catch {
             print(error.localizedDescription)
         }

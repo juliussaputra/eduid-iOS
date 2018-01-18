@@ -33,7 +33,6 @@ class LoginViewController: UIViewController {
         usernameTF.delegate = self
         passwordTF.delegate = self
         
-        
         tokenEnd = configModel.getTokenEndpoint()
         print("Issuer = \(String(describing: configModel.getIssuer()))")
         print("TOKEN ENDPOINT = \(tokenEnd?.absoluteString ?? "error")" )
@@ -112,8 +111,9 @@ class LoginViewController: UIViewController {
             return
         }
         showLoadUI()
-        tokenModel?.deleteAll()
+        
         tokenModel = TokenModel(tokenURI: self.tokenEnd!)
+        tokenModel?.deleteAll()
         let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!)
         
         tokenModel?.fetchServer(username: userDev, password: passDev, assertionBody: userAssert!)
