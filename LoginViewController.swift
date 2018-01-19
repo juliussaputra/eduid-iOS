@@ -36,6 +36,7 @@ class LoginViewController: UIViewController {
         tokenEnd = configModel.getTokenEndpoint()
         print("Issuer = \(String(describing: configModel.getIssuer()))")
         print("TOKEN ENDPOINT = \(tokenEnd?.absoluteString ?? "error")" )
+        
         let keystore = KeyStore()
         sessionKey = KeyStore.generateKeyPair(keyType: kSecAttrKeyTypeRSA as String)!
         var urlPathKey = Bundle.main.url(forResource: "ios_priv", withExtension: "jwks")
@@ -48,35 +49,12 @@ class LoginViewController: UIViewController {
         //key object always save the kid in base64-- but to send in jws it need base64url
         signingKey = keystore.getKey(withKid: privateKeyID.base64UrlToBase64())!
         
-        
-        //        print("ASSERT : " , clientAssert)
-        //        configModel.fetchServer(serverUrl: reqURL!)
-        
-        //        requester.fetch(url: reqURL!, requestData: self.requestData)
-        /*
-         var header : [String : Any] = [:]
-         header["typ"] = "JWT"
-         header["alg"] = "RS256"
-         let payload : [String : Any] = [
-         "iss" : "julius",
-         "exp" : 2020,
-         "link" : "http://google.ch"
-         ]
-         let privateKey = KeyChain.loadKey(tagString: "privateKey")
-         let jws = JWS()
-         let jwt = jws.sign(header: header, payload: payload, key: privateKey!)
-         print("JWT : " , jwt!)
-         */
-        /*
-         let urlPath = Bundle.main.url(forResource: "rsaCert", withExtension: ".der")
-         print("url path : " , urlPath?.absoluteString as Any)
-         
-         var keyMan = KeyManager.init(resourcePath: (urlPath?.relativePath)!)
-         let publickey = keyMan.getPublicKey()
-         let verified = jws.verify(header: header, payload: payload, signature: &jws.signatureStr!, key: publickey!)
-         print(verified)
-         */
-        //        self.testJWTswift()
+        tokenModel = TokenModel(tokenURI: self.tokenEnd!)
+        if (tokenModel?.fetchDatabase())! {
+            self.loginSuccessful()
+            return
+        }
+
     }
     
     override func didReceiveMemoryWarning() {
@@ -113,11 +91,14 @@ class LoginViewController: UIViewController {
         showLoadUI()
         
         tokenModel = TokenModel(tokenURI: self.tokenEnd!)
-        tokenModel?.deleteAll()
+        
         let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!)
-        
-        tokenModel?.fetchServer(username: userDev, password: passDev, assertionBody: userAssert!)
-        
+        do{
+            try tokenModel?.fetchServer(username: userDev, password: passDev, assertionBody: userAssert!)
+        } catch {
+            print(error.localizedDescription)
+            return
+        }
         var timeoutCounter : Float = 0
         let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timerTmp in
             timeoutCounter += 0.5

@@ -2,6 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string></string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eduid-iOS</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>ch.htwchur.eduid-iOS</string>
+		</dict>
+	</array>
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

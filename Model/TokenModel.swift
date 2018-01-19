@@ -158,7 +158,12 @@ class TokenModel : NSObject {
         
     }
     
-    func fetchServer(username : String , password : String, assertionBody : String) {
+    func fetchServer(username : String , password : String, assertionBody : String) throws {
+        
+        if self.tokenURI == nil {
+            throw NSError.init(domain: "No URL found in token model", code: 404, userInfo: nil)
+        }
+        
         let request  = NSMutableURLRequest(url: self.tokenURI!)
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         
@@ -214,7 +219,11 @@ class TokenModel : NSObject {
     }
     
     func giveIdTokenJWS() -> [String : Any]?{
-        guard let jwsToParse : String = self.jsonResponse!["id_token"] as? String else {
+        /*
+        guard let jwsToParse : String = self.jsonResponse?["id_token"] as? String else {
+            return nil
+        }*/
+        guard let jwsToParse : String  = self.id_token else {
             return nil
         }
         
@@ -248,6 +257,10 @@ class TokenModel : NSObject {
         }catch{
             print("Couldn't save the token data. \(error) , \(error.localizedDescription)")
         }
+    }
+    
+    func setURI(uri : URL) {
+        self.tokenURI = uri
     }
     
     func validateAccessToken () -> Bool {
