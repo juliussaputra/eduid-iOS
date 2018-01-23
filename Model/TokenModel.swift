@@ -172,7 +172,7 @@ class TokenModel : NSObject {
         let base64loginString  = loginData.base64EncodedString().clearPaddding()
         let body  = [ "grant_type" : self.grant_type ,
                       "assertion" : assertionBody,
-                      "scope" : "openid \(username) julius.saputra@htwchur.ch"
+                      "scope" : "openid profile email address phone" // \(username) julius.saputra@htwchur.ch"
         ]
         
         request.httpMethod = "POST"
@@ -325,11 +325,11 @@ extension TokenModel : URLSessionDataDelegate {
         
         do{
             let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as! [String : Any]
-            print(jsonResponse)
+            print("Response : \(jsonResponse)")
             self.jsonResponse = jsonResponse
             self.extractJson()
             if self.verifyIDToken() {
-                let _ = validateAccessToken()
+//                let _ = validateAccessToken()
                 self.tokenDownloaded = true
             } else {
                 self.tokenDownloaded = false

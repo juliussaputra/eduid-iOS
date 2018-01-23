@@ -136,7 +136,7 @@ class LoginViewController: UIViewController {
             return
         }
         profileVC.token = self.tokenModel
-        profileVC.textLabel = usernameTF.text
+//        profileVC.textLabel = usernameTF.text
 //        self.navigationController?.pushViewController(profileVC, animated: true)
     }
     
