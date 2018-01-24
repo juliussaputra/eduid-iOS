@@ -18,8 +18,8 @@ class LoginViewController: UIViewController {
     @IBOutlet weak var passwordTF: UITextField!
     @IBOutlet weak var loginButton: UIButton!
     
-    private let userDev = "ios dev"
-    private let passDev = "EsfafWyegBorIdKonWacVobOshNig9"
+    private var userDev: String?
+    private var passDev: String?
     private var tokenEnd : URL?
     private var sessionKey : [String : Key]?
     private var signingKey : Key?
@@ -29,7 +29,6 @@ class LoginViewController: UIViewController {
         super.viewDidLoad()
         print("View Did load")
         
-        loginButton.backgroundColor = UIColor.black
         usernameTF.delegate = self
         passwordTF.delegate = self
         
@@ -38,7 +37,10 @@ class LoginViewController: UIViewController {
         print("TOKEN ENDPOINT = \(tokenEnd?.absoluteString ?? "error")" )
         
         let keystore = KeyStore()
-        sessionKey = KeyStore.generateKeyPair(keyType: kSecAttrKeyTypeRSA as String)!
+        if !self.loadKey() {
+            sessionKey = KeyStore.generateKeyPair(keyType: kSecAttrKeyTypeRSA as String)!
+            self.saveKey()
+        }
         var urlPathKey = Bundle.main.url(forResource: "ios_priv", withExtension: "jwks")
         let keyID = keystore.getPrivateKeyIDFromJWKSinBundle(resourcePath: (urlPathKey?.relativePath)!)
         urlPathKey = Bundle.main.url(forResource: "ios_priv", withExtension: "pem")
@@ -62,25 +64,33 @@ class LoginViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    func loadPlist(){
+        if let path = Bundle.main.path(forResource: "Setting", ofType: "plist") {
+            if let dic = NSDictionary(contentsOfFile: path) as? [String : Any] {
+                self.userDev = dic["ClientID"] as? String
+                self.passDev = dic["ClientPass"] as? String
+            }
+        }
+    }
     
-    func testJWTswift() {
-        var dict = [
-            "e"  : "AQAB",
-            "kty" : "RSA",
-            "n" : "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw"]
-        let kid = KeyStore.createKIDfromJWK(jwkDict: dict) as String!
-        print("KID : \(String(describing: kid!))")
-        dict["kid"] = kid!
-        let keyStore = KeyStore.init()
-        let key = keyStore.jwkToKey(jwkDict: dict)
-        _ = KeyChain.deleteKey(tagString: "testKey", keyToDelete: key!)
-        let saved  = KeyChain.saveKey(tagString: "testKey", keyToSave: key!)
-        print("SAVED : \(saved)")
-        //load the kid from keychain
-        let loadKey = KeyChain.loadKey(tagString: "testKey")
-        print("load key : \(loadKey!.getKeyObject())")
-        print("kid and loadKid same : \(kid! == loadKey?.getKid()!)")
-        
+    func loadKey() -> Bool {
+        sessionKey = [String : Key]()
+        sessionKey!["public"] = KeyChain.loadKey(tagString: "sessionPublic")
+        sessionKey!["private"] = KeyChain.loadKey(tagString: "sessionPrivate")
+        if  sessionKey!["public"] != nil && sessionKey!["private"] != nil {
+            
+            print("Keys already existed")
+            return true
+            
+        } else {
+            return false
+        }
+    }
+    
+    func saveKey() {
+        let _ = KeyChain.saveKey(tagString: "sessionPublic", keyToSave: sessionKey!["public"]!)
+        sessionKey!["private"] = KeyStore.createKIDfromKey(key: sessionKey!["private"]!)
+        let _ = KeyChain.saveKey(tagString: "sessionPrivate", keyToSave: sessionKey!["private"]!)
     }
     
     @IBAction func login(_ sender: Any) {
@@ -90,18 +100,18 @@ class LoginViewController: UIViewController {
         }
         showLoadUI()
         
-        tokenModel = TokenModel(tokenURI: self.tokenEnd!)
+//        tokenModel = TokenModel(tokenURI: self.tokenEnd!)
         
-        let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!)
+        let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev! , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!)
         do{
-            try tokenModel?.fetchServer(username: userDev, password: passDev, assertionBody: userAssert!)
+            try tokenModel?.fetchServer(username: userDev!, password: passDev!, assertionBody: userAssert!)
         } catch {
             print(error.localizedDescription)
             return
         }
-        var timeoutCounter : Float = 0
-        let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timerTmp in
-            timeoutCounter += 0.5
+        var timeoutCounter : Double = 0
+        let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timerTmp in
+            timeoutCounter += timerTmp.timeInterval
             if self.tokenModel?.tokenDownloaded != nil {
                 
                 if (self.tokenModel?.tokenDownloaded)! {

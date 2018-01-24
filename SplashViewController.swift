@@ -13,14 +13,15 @@ class SplashViewController: UIViewController {
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
     var configModel : EduidConfigModel?
-    
+    private var reqUrl : URL?
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let reqUrl  = URL(string: "https://eduid.htwchur.ch/oidc/.well-known/openid-configuration")
+        
+        self.loadPlist()
         configModel = EduidConfigModel(serverUrl: reqUrl)
         
         NotificationCenter.default.addObserver(self, selector: #selector(appearFromBackground), name: NSNotification.Name.UIApplicationWillEnterForeground , object: nil)
@@ -46,6 +47,14 @@ class SplashViewController: UIViewController {
         downloadConfig()
     }
     
+    func loadPlist(){
+        if let path = Bundle.main.path(forResource: "Setting", ofType: "plist") {
+            if let dic = NSDictionary(contentsOfFile: path) as? [String : Any] {
+                self.reqUrl = URL(string: (dic["ConfigURL"] as? String)!)
+                
+            }
+        }
+    }
     
     func downloadConfig() {
         
