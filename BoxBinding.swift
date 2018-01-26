@@ -26,7 +26,7 @@ class BoxBinding<T> {
     func bind(listener: Listener?){
         print("in bind func")
         self.listener = listener
-        listener?(value)
+        //listener?(value)
     }
     
 }

@@ -35,7 +35,7 @@ class EduidConfigModel : NSObject {
     //private var grantSupported : Bool?
     
     var serverUrl : URL?
-    var configDownloaded = false
+    var downloadedSuccess : BoxBinding<Bool?> = BoxBinding(nil)
     var totalSize : String?
     
     init(serverUrl : URL? = nil) {
@@ -50,6 +50,9 @@ class EduidConfigModel : NSObject {
         defer{ self.fetchDatabase() }
     }
     
+    deinit {
+        print("EduidConfigModel is being deinitialized")
+    }
     
     func delete(name : String) {
         let indexHelper = searchData(name: name)
@@ -88,7 +91,7 @@ class EduidConfigModel : NSObject {
         self.revocation = nil
         self.jwksUri = nil
         
-        self.configDownloaded = false
+        self.downloadedSuccess.value = nil
     }
     
     func extractJson (){
@@ -118,8 +121,10 @@ class EduidConfigModel : NSObject {
     //Fetch config data from the EDU-ID Server
     func fetchServer() {
         
+        var request = URLRequest(url: self.serverUrl!)
+        request.timeoutInterval = 5
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-        let dataTask = session.dataTask(with: self.serverUrl!)
+        let dataTask = session.dataTask(with: request)
         dataTask.resume()
         
     }
@@ -289,11 +294,21 @@ extension URLSession{
 
 extension EduidConfigModel : URLSessionDataDelegate {
     
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if(error == nil){
+            return
+        }
+        print("Session complete with error : \(error.debugDescription)")
+        
+        self.downloadedSuccess.value = nil
+    }
+    
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         
         let httpResponse = dataTask.response as! HTTPURLResponse
         print("Did Receive Response with Status: " , httpResponse.statusCode)
         if(httpResponse.statusCode != 200){
+            self.downloadedSuccess.value = false
             return
         }
         completionHandler(URLSession.ResponseDisposition.allow)
@@ -316,7 +331,7 @@ extension EduidConfigModel : URLSessionDataDelegate {
                 save()
             }
         }
-        self.configDownloaded = true
+        self.downloadedSuccess.value = true
     }
 }
 

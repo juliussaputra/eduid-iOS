@@ -32,6 +32,7 @@ class LoginViewController: UIViewController {
         usernameTF.delegate = self
         passwordTF.delegate = self
         
+        loadPlist()
         tokenEnd = configModel.getTokenEndpoint()
         print("Issuer = \(String(describing: configModel.getIssuer()))")
         print("TOKEN ENDPOINT = \(tokenEnd?.absoluteString ?? "error")" )
@@ -44,6 +45,7 @@ class LoginViewController: UIViewController {
         var urlPathKey = Bundle.main.url(forResource: "ios_priv", withExtension: "jwks")
         let keyID = keystore.getPrivateKeyIDFromJWKSinBundle(resourcePath: (urlPathKey?.relativePath)!)
         urlPathKey = Bundle.main.url(forResource: "ios_priv", withExtension: "pem")
+        
         guard let privateKeyID = keystore.getPrivateKeyFromPemInBundle(resourcePath: (urlPathKey?.relativePath)!, identifier: keyID!) else {
             print("ERROR getting private key")
             return
@@ -56,6 +58,7 @@ class LoginViewController: UIViewController {
             self.loginSuccessful()
             return
         }
+        
 
     }
     
@@ -63,6 +66,22 @@ class LoginViewController: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    func checkDownload(downloaded : Bool?) {
+        print("checkDownload LoginVC : \(String(describing: downloaded))")
+        
+        self.removeLoadUI()
+        
+        if downloaded == nil {
+            showAlertUI()
+        }else if !downloaded! {
+            loginUnsuccessful()
+        }else {
+            loginSuccessful()
+        }
+        
+    }
+    
     
     func loadPlist(){
         if let path = Bundle.main.path(forResource: "Setting", ofType: "plist") {
@@ -100,6 +119,11 @@ class LoginViewController: UIViewController {
         }
         showLoadUI()
         
+        tokenModel?.downloadSuccess.bind (listener: { (dlBool) in
+            DispatchQueue.main.async {
+                self.checkDownload(downloaded: dlBool)
+            }
+        })
 //        tokenModel = TokenModel(tokenURI: self.tokenEnd!)
         
         let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev! , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!)
@@ -109,6 +133,8 @@ class LoginViewController: UIViewController {
             print(error.localizedDescription)
             return
         }
+        
+        /*
         var timeoutCounter : Double = 0
         let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timerTmp in
             timeoutCounter += timerTmp.timeInterval
@@ -134,6 +160,8 @@ class LoginViewController: UIViewController {
             }
         }
         timer.fire()
+         */
+        
     }
     
     
@@ -152,6 +180,7 @@ class LoginViewController: UIViewController {
     
     func loginSuccessful(){
 //        let segue = self.performSegue(withIdentifier: <#T##String#>, sender: <#T##Any?#>)
+        self.tokenModel?.downloadSuccess.listener = nil
         self.performSegue(withIdentifier: "toProfile", sender: self)
     }
     

@@ -9,7 +9,7 @@
 import UIKit
 
 class SplashViewController: UIViewController {
-
+    
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
     var configModel : EduidConfigModel?
@@ -24,27 +24,48 @@ class SplashViewController: UIViewController {
         self.loadPlist()
         configModel = EduidConfigModel(serverUrl: reqUrl)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(appearFromBackground), name: NSNotification.Name.UIApplicationWillEnterForeground , object: nil)
+        //        NotificationCenter.default.addObserver(self, selector: #selector(appearFromBackground), name: NSNotification.Name.UIApplicationWillEnterForeground , object: nil)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         self.hideBusyUI()
     }
-
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
         self.showBusyUI()
         
         configModel?.deleteAll()
-        downloadConfig()
+        configModel?.downloadedSuccess.bind (listener: { (dlBool) in
+            DispatchQueue.main.async{
+                self.checkDownload(downloaded: dlBool)
+            }
+        })
+        configModel?.fetchServer()
+        //        downloadConfig()
         
     }
     
-    @objc func appearFromBackground() {
-        print("appear from background")
-        downloadConfig()
+    //    @objc func appearFromBackground() {
+    //        print("appear from background")
+    //        downloadConfig()
+    //    }
+    
+    func checkDownload(downloaded : Bool?){
+        
+        print("checkDownload in SplashViewController : \( String(describing:downloaded) ) ")
+        if downloaded == nil || !downloaded! {
+            
+            self.showAlertUI()
+            
+            
+            return
+        }
+        
+        downloadFinished()
+        
     }
     
     func loadPlist(){
@@ -58,21 +79,22 @@ class SplashViewController: UIViewController {
     
     func downloadConfig() {
         
-        configModel?.fetchServer()
-        var timeoutCounter = 0
-        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timerTmp in
-            timeoutCounter += 1
-            print(timeoutCounter)
-            if (self.configModel?.configDownloaded)!  {
-                timerTmp.invalidate()
-                self.downloadFinished()
-            } else if timeoutCounter == 3 {
-                self.showAlertUI()
-                timerTmp.invalidate()
-            }
-        }
-        timer.fire()
-        
+        /* MANUAL TIMEOUT OPTION WITH TIMER
+         configModel?.fetchServer()
+         var timeoutCounter = 0
+         let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timerTmp in
+         timeoutCounter += 1
+         print(timeoutCounter)
+         if (self.configModel?.configDownloaded)!  {
+         timerTmp.invalidate()
+         self.downloadFinished()
+         } else if timeoutCounter == 4 {
+         self.showAlertUI()
+         timerTmp.invalidate()
+         }
+         }
+         timer.fire()
+         */
     }
     
     override func didReceiveMemoryWarning() {
@@ -80,10 +102,10 @@ class SplashViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-
+    
     
     // MARK: - Navigation
-
+    
     func downloadFinished () {
         let loginVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC")
         let navController = UINavigationController.init(rootViewController: loginVC!)
@@ -105,7 +127,7 @@ class SplashViewController: UIViewController {
         
         let alert = UIAlertController(title: "Timeout", message: "Please check your internet connection and reopen the app", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Try Again", style: .default, handler: { (alertAction) in
-            self.downloadConfig()
+            self.configModel?.fetchServer()
         }))
         alert.addAction(UIAlertAction(title: "Close", style: .default, handler: { (alertAction) in
             UIControl().sendAction(#selector(NSXPCConnection.suspend), to: UIApplication.shared, for: nil)
@@ -113,5 +135,5 @@ class SplashViewController: UIViewController {
         self.present(alert, animated: true, completion: nil)
         
     }
-
+    
 }

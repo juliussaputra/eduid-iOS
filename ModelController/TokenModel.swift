@@ -12,9 +12,9 @@ import JWTswift
 
 class TokenModel : NSObject {
     
-    private var entities : [NSManagedObject] = []
-    private lazy var persistentContainer : NSPersistentContainer? = nil
-    private lazy var managedContext : NSManagedObjectContext? = nil
+    private lazy var entities : [NSManagedObject] = []
+    private var persistentContainer : NSPersistentContainer? = nil
+    private var managedContext : NSManagedObjectContext? = nil
     
     
     private var tokenURI : URL?
@@ -33,7 +33,7 @@ class TokenModel : NSObject {
     //    private var grant_type = "urn%3Aietf%3Aparamsurn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer"
     let grant_type = "urn:ietf:params:oauth:grant-type:jwt-bearer"
     
-    var tokenDownloaded : Bool?
+    var downloadSuccess : BoxBinding<Bool?> = BoxBinding(nil)
     
     init( tokenURI : URL? = nil ) {
         super.init()
@@ -41,6 +41,10 @@ class TokenModel : NSObject {
         self.tokenURI = tokenURI
         self.persistentContainer = SharedDataStore.getPersistentContainer()
         self.managedContext = self.persistentContainer?.viewContext
+    }
+    
+    deinit {
+            print("TokenModel is being deinitialized")
     }
     
     
@@ -113,7 +117,8 @@ class TokenModel : NSObject {
         self.id_token = nil
         self.tokenType = nil
         self.jsonResponse = nil
-        self.tokenDownloaded = nil
+        
+        self.downloadSuccess.value = nil
     }
     
     func extractDatabaseData(savedData : NSManagedObject){
@@ -180,7 +185,6 @@ class TokenModel : NSObject {
         request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.addValue("Basic \(base64loginString)" , forHTTPHeaderField: "Authorization")
         
-        self.tokenDownloaded = nil
         let dataTask  = session.dataTask(with: request as URLRequest)
         dataTask.resume()
         
@@ -308,13 +312,20 @@ class TokenModel : NSObject {
 
 extension TokenModel : URLSessionDataDelegate {
     
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        
+        print("Did complete with Error : \(error.debugDescription)")
+        self.downloadSuccess.value = nil
+        
+    }
+    
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         
         let httpResponse = dataTask.response as! HTTPURLResponse
         print("Did receive response with status : \(httpResponse.statusCode)")
         if(httpResponse.statusCode != 200){
             print("Response : \(httpResponse.description)" )
-            self.tokenDownloaded = false
+            self.downloadSuccess.value = false
             return
         }
         completionHandler(URLSession.ResponseDisposition.allow)
@@ -330,9 +341,9 @@ extension TokenModel : URLSessionDataDelegate {
             self.extractJson()
             if self.verifyIDToken() {
 //                let _ = validateAccessToken()
-                self.tokenDownloaded = true
+                self.downloadSuccess.value = true
             } else {
-                self.tokenDownloaded = false
+                self.downloadSuccess.value = false
             }
             self.save()
         } catch {
