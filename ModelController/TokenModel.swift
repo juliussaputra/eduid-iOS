@@ -208,7 +208,7 @@ class TokenModel : NSObject {
         
     }
     
-    func httpBodyBuilder(dict : [String: Any]) -> String {
+    private func httpBodyBuilder(dict : [String: Any]) -> String {
         var resultArray = [String]()
         
         for (key,value) in dict {

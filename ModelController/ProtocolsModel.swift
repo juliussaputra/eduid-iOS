@@ -15,7 +15,6 @@ class ProtocolsModel : NSObject {
     private lazy var persistentContainer: NSPersistentContainer? = nil
     private lazy var managedContext : NSManagedObjectContext? = nil
     
-    var protocolDownloaded : Bool?
     private var jsonResponse : [Any]?
     
     private var engineName : [String]?
@@ -47,12 +46,11 @@ class ProtocolsModel : NSObject {
         
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         print("protocol list : \(protocolList)")
-        self.protocolDownloaded = nil
         let dataTask = session.dataTask(with: request as URLRequest)
         dataTask.resume()
     }
     
-    func extractJson(){
+    private func extractJson(){
         
         if self.jsonResponse == nil {
             return
@@ -74,7 +72,7 @@ class ProtocolsModel : NSObject {
     
 }
 
-extension ProtocolsModel : URLSessionDataDelegate, URLSessionDelegate {
+extension ProtocolsModel : URLSessionDataDelegate {
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if error == nil {
