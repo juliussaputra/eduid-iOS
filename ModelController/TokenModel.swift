@@ -89,7 +89,7 @@ class TokenModel : NSObject {
         timestamp = Int(Date().timeIntervalSince1970)
         payload["iat"] = String(timestamp)
         payload["cnf"] = cnf
-        payload["azp"] =  UIDevice.current.identifierForVendor?.uuidString //jwk?["kid"]?.base64ToBase64Url()
+        payload["azp"] =  UIDevice.current.identifierForVendor?.uuidString //jwk?["kid"]?
         payload["x_crd"] = password
         
         let jwt = JWS.init(payloadDict: payload)
@@ -188,6 +188,10 @@ class TokenModel : NSObject {
         let dataTask  = session.dataTask(with: request as URLRequest)
         dataTask.resume()
         
+    }
+    
+    func giveAccessToken() -> String? {
+        return self.accesToken
     }
     
     func giveTokenID() -> [[String : Any]]? {

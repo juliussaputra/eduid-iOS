@@ -24,44 +24,47 @@ class AuthorizationTokenModel : NSObject {
     
     override init() {
         super.init()
+        
+//        self.
     }
     
     deinit {
         print("AuthorizationTokenModel is being deinitialized")
     }
     
-    func createAssert(addressToSend : URL, subject : String , audience : String , keyToSign : Key) -> String {
+    func createAssert(addressToSend : String, subject : String , audience : String, accessToken : String ,kidToSend : String , keyToSign : Key) -> String? {
         var payload = [String : Any]()
-        payload["azp"] = addressToSend.absoluteString
+        payload["azp"] = addressToSend
         payload["iss"] = UIDevice.current.identifierForVendor?.uuidString
         payload["aud"] = audience
-        payload["sub"] = ""
+        payload["sub"] = subject
             
-        var timestamp = Int(Date().timeIntervalSince1970)
+        let timestamp = Int(Date().timeIntervalSince1970)
         payload["iat"] = String(timestamp)
-        payload["cnf"] = ["kid" : keyToSign.getKid()]
+        payload["cnf"] = ["kid" : kidToSend]
             
-        payload["x_jwt"] = "asadasd"
+        payload["x_jwt"] = accessToken
+        print("assert Payload: \(payload)")
+        let jwt = JWS.init(payloadDict: payload)
         
-        return ""
+        return jwt.sign(key: keyToSign, alg: .RS256)
     }
     
     func fetch (address : URL, assertionBody : String ){
         
-        let request = NSMutableURLRequest(url: address)
+        let body = [ "assertion" : assertionBody,
+            "grant_type" : self.grant_type
+                    ]
+        let bodyUrl = httpBodyBuilder(dict: body)
+        let strUrl = address.absoluteString + "?" + bodyUrl
+        
+        let request = NSMutableURLRequest(url: URL(string: strUrl)!)
         request.httpMethod = "GET"
         print("FETCH : " , request.url)
         
-        let body = [ "grant_type" : self.grant_type,
-                     "assertion" : assertionBody
-                    ]
-        let bodyUrl = httpBodyBuilder(dict: body)
-        
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         let dataTask = session.dataTask(with: request as URLRequest)
-        
-        
-        
+        dataTask.resume()
     }
     
     
@@ -87,6 +90,36 @@ class AuthorizationTokenModel : NSObject {
     
 }
 
-extension AuthorizationTokenModel : URLSessionDelegate {
+extension AuthorizationTokenModel : URLSessionDataDelegate {
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        print("Did complete with Error : \(error.debugDescription)")
+        self.downloadSuccess.value = nil
+    }
+    
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        
+        let httpResponse = dataTask.response as! HTTPURLResponse
+        print("Did receive response with status : \(httpResponse.statusCode)")
+        if(httpResponse.statusCode != 200){
+            print("Response : \(httpResponse.description)" )
+            self.downloadSuccess.value = false
+            return
+        }
+        completionHandler(URLSession.ResponseDisposition.allow)
+        
+    }
+    
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        
+        do{
+            let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as! [String : Any]
+            print("Response : \(jsonResponse)")
+            self.jsonResponse = jsonResponse
+        } catch {
+            print(error.localizedDescription)
+        }
+        
+    }
     
 }

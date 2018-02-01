@@ -8,14 +8,17 @@
 
 import UIKit
 import JWTswift
+import TextFieldEffects
 
 class LoginViewController: UIViewController {
     
     private var configModel = EduidConfigModel()
     //    private var requestData = RequestData()
     
-    @IBOutlet weak var usernameTF: UITextField!
-    @IBOutlet weak var passwordTF: UITextField!
+    @IBOutlet weak var usernameTF: IsaoTextField! //    UITextField!
+    @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var backgroundView: UIImageView!
+    @IBOutlet weak var passwordTF: IsaoTextField! //UITextField!
     @IBOutlet weak var loginButton: UIButton!
     
     private var userDev: String?
@@ -29,8 +32,7 @@ class LoginViewController: UIViewController {
         super.viewDidLoad()
         print("View Did load")
         
-        usernameTF.delegate = self
-        passwordTF.delegate = self
+        setUIelements()
         
         loadPlist()
         tokenEnd = configModel.getTokenEndpoint()
@@ -50,8 +52,8 @@ class LoginViewController: UIViewController {
             print("ERROR getting private key")
             return
         }
-        //key object always save the kid in base64-- but to send in jws it need base64url
-        signingKey = keystore.getKey(withKid: privateKeyID.base64UrlToBase64())!
+        //key object always save the kid in base64url
+        signingKey = keystore.getKey(withKid: privateKeyID)!
         
         tokenModel = TokenModel(tokenURI: self.tokenEnd!)
         if (tokenModel?.fetchDatabase())! {
@@ -62,9 +64,36 @@ class LoginViewController: UIViewController {
 
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    func setUIelements(){
+        
+        backgroundView.loadGif(name: "testGif")
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+        
+        imageView.clipsToBounds = true
+        imageView.image = UIImage(named: "appicon400.png")//?.roundedImageWithBorder(width: 10, color: UIColor.black)
+        imageView.layer.cornerRadius = imageView.layer.frame.width / 2
+        
+        
+        usernameTF.inactiveColor = UIColor.gray
+        passwordTF.inactiveColor = UIColor.gray
+        usernameTF.activeColor = UIColor(red: 85/255, green: 146/255, blue: 193/255, alpha: 1.0)
+        passwordTF.activeColor = UIColor(red: 85/255, green: 146/255, blue: 193/255, alpha: 1.0) //UIColor.red
+        
+        usernameTF.placeholder = "Username"
+        passwordTF.placeholder = "Password"
+        
+        usernameTF.delegate = self
+        passwordTF.delegate = self
+    }
+    
+    @objc func keyboardWillShow(){
+        self.view.frame.origin.y = -150 //move upward 150
+    }
+    
+    @objc func keyboardWillHide(){
+        self.view.frame.origin.y = 0
     }
     
     func checkDownload(downloaded : Bool?) {
@@ -92,11 +121,12 @@ class LoginViewController: UIViewController {
         }
     }
     
+    
     func loadKey() -> Bool {
         sessionKey = [String : Key]()
-        sessionKey!["public"] = KeyChain.loadKey(tagString: "sessionPublic")
-        sessionKey!["private"] = KeyChain.loadKey(tagString: "sessionPrivate")
-        if  sessionKey!["public"] != nil && sessionKey!["private"] != nil {
+        sessionKey = KeyChain.loadKeyPair(tagString: "sessionKey")
+
+        if  sessionKey != nil {
             
             print("Keys already existed")
             return true
@@ -107,9 +137,9 @@ class LoginViewController: UIViewController {
     }
     
     func saveKey() {
-        let _ = KeyChain.saveKey(tagString: "sessionPublic", keyToSave: sessionKey!["public"]!)
-        sessionKey!["private"] = KeyStore.createKIDfromKey(key: sessionKey!["private"]!)
-        let _ = KeyChain.saveKey(tagString: "sessionPrivate", keyToSave: sessionKey!["private"]!)
+        let a = KeyChain.saveKeyPair(tagString: "sessionKey", keyPair: sessionKey!)
+        
+        print("SAVE KEY : \(a)")
     }
     
     @IBAction func login(_ sender: Any) {
@@ -126,7 +156,7 @@ class LoginViewController: UIViewController {
         })
 //        tokenModel = TokenModel(tokenURI: self.tokenEnd!)
         
-        let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev! , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!)
+        let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev! , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!) //use signing key
         do{
             try tokenModel?.fetchServer(username: userDev!, password: passDev!, assertionBody: userAssert!)
         } catch {
@@ -174,8 +204,7 @@ class LoginViewController: UIViewController {
             return
         }
         profileVC.token = self.tokenModel
-//        profileVC.textLabel = usernameTF.text
-//        self.navigationController?.pushViewController(profileVC, animated: true)
+
     }
     
     func loginSuccessful(){
@@ -221,9 +250,20 @@ class LoginViewController: UIViewController {
         view?.removeFromSuperview()
     }
     
+    @IBAction func gestureDidSwipeDown(_ sender: UISwipeGestureRecognizer) {
+        
+        if self.usernameTF.isFirstResponder || self.passwordTF.isFirstResponder {
+            self.view.endEditing(true)
+        }
+    }
+    
 }
 
 extension LoginViewController : UITextFieldDelegate {
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        return self.view.endEditing(true)
+    }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         textField.autocorrectionType = .no

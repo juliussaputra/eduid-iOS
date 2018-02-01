@@ -19,6 +19,7 @@ class ProtocolsModel : NSObject {
     
     private var engineName : [String]?
     private var homePageLink : [String]?
+    private var apisLink : [String]?
     
     var downloadSuccess : BoxBinding<Bool?> = BoxBinding(nil)
     
@@ -57,17 +58,39 @@ class ProtocolsModel : NSObject {
         }
         self.engineName = [String]()
         self.homePageLink = [String]()
+        self.apisLink = [String]()
         
         for entity in jsonResponse! {
             let jsonDict = entity as! [String : Any]
             self.engineName?.append( jsonDict["engineName"] as! String )
             self.homePageLink?.append( jsonDict["homePageLink"] as! String)
+            
+            let apis = jsonDict["apis"] as! [String : Any]
+            let apisOauth = apis["org.ietf.oauth2"] as! [String : Any]
+            
+            self.apisLink?.append(apisOauth["apiLink"] as! String)
         }
     }
     
-    func getEngines() -> [String] {
+    func getCount() -> Int{
+        return (self.engineName?.count)!
+    }
+    
+    func getApislink(entryNumber : Int) -> URL? {
         
-        return self.engineName ?? [String]()
+        let strurl = getHomepageLink(entryNumber: entryNumber)! + self.apisLink![entryNumber]
+        let resultUrl = URL(string: strurl)
+        
+        return resultUrl
+    }
+    
+    func getHomepageLink(entryNumber : Int) -> String? {
+        return self.homePageLink?[entryNumber] ?? nil
+    }
+    
+    func getEngines(entryNumber : Int) -> String? {
+        
+        return self.engineName?[entryNumber] ?? nil
     }
     
 }
