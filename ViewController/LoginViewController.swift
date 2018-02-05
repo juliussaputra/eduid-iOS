@@ -9,6 +9,7 @@
 import UIKit
 import JWTswift
 import TextFieldEffects
+import NVActivityIndicatorView
 
 class LoginViewController: UIViewController {
     
@@ -20,6 +21,7 @@ class LoginViewController: UIViewController {
     @IBOutlet weak var backgroundView: UIImageView!
     @IBOutlet weak var passwordTF: IsaoTextField! //UITextField!
     @IBOutlet weak var loginButton: UIButton!
+    private var indicator : NVActivityIndicatorView!
     
     private var userDev: String?
     private var passDev: String?
@@ -61,7 +63,7 @@ class LoginViewController: UIViewController {
             return
         }
         
-
+        
     }
     
     func setUIelements(){
@@ -86,6 +88,17 @@ class LoginViewController: UIViewController {
         
         usernameTF.delegate = self
         passwordTF.delegate = self
+        
+        
+        indicator = NVActivityIndicatorView(frame: CGRect(x: self.view.center.x,
+                                                          y: self.view.center.y,
+                                                          width: self.view.bounds.width / 5, height: self.view.bounds.height / 7))
+        indicator!.color = UIColor(red: 85/255, green: 146/255, blue: 193/255, alpha: 1.0)
+        indicator!.type = .lineScaleParty
+        indicator.isHidden = false
+        indicator.center = self.view.center
+        
+        
     }
     
     @objc func keyboardWillShow(){
@@ -125,7 +138,7 @@ class LoginViewController: UIViewController {
     func loadKey() -> Bool {
         sessionKey = [String : Key]()
         sessionKey = KeyChain.loadKeyPair(tagString: "sessionKey")
-
+        
         if  sessionKey != nil {
             
             print("Keys already existed")
@@ -154,7 +167,7 @@ class LoginViewController: UIViewController {
                 self.checkDownload(downloaded: dlBool)
             }
         })
-//        tokenModel = TokenModel(tokenURI: self.tokenEnd!)
+        //        tokenModel = TokenModel(tokenURI: self.tokenEnd!)
         
         let userAssert = tokenModel?.createUserAssert(userSub: userSub , password: pass, issuer: userDev! , audience: configModel.getIssuer()!, keyToSend: sessionKey!["public"]!, keyToSign: signingKey!) //use signing key
         do{
@@ -165,52 +178,53 @@ class LoginViewController: UIViewController {
         }
         
         /*
-        var timeoutCounter : Double = 0
-        let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timerTmp in
-            timeoutCounter += timerTmp.timeInterval
-            if self.tokenModel?.tokenDownloaded != nil {
-                
-                if (self.tokenModel?.tokenDownloaded)! {
-                    print("GOT TOKEN")
-                    timerTmp.invalidate()
-                    self.loginSuccessful()
-                    self.removeLoadUI()
-                    
-                }else {
-                    print("Login Rejected")
-                    timerTmp.invalidate()
-                    self.loginUnsuccessful()
-                    self.removeLoadUI()
-                }
-            }
-            else if timeoutCounter == 5 {
-                self.showAlertUI()
-                timerTmp.invalidate()
-                self.removeLoadUI()
-            }
-        }
-        timer.fire()
+         var timeoutCounter : Double = 0
+         let timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timerTmp in
+         timeoutCounter += timerTmp.timeInterval
+         if self.tokenModel?.tokenDownloaded != nil {
+         
+         if (self.tokenModel?.tokenDownloaded)! {
+         print("GOT TOKEN")
+         timerTmp.invalidate()
+         self.loginSuccessful()
+         self.removeLoadUI()
+         
+         }else {
+         print("Login Rejected")
+         timerTmp.invalidate()
+         self.loginUnsuccessful()
+         self.removeLoadUI()
+         }
+         }
+         else if timeoutCounter == 5 {
+         self.showAlertUI()
+         timerTmp.invalidate()
+         self.removeLoadUI()
+         }
+         }
+         timer.fire()
          */
         
     }
     
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier  != "toProfile" {
+        if segue.identifier  != "toProfileList" {
             return
         }
-        
-        guard let profileVC = segue.destination as? ProfileViewController else{
-            return
-        }
-        profileVC.token = self.tokenModel
-
+        /*
+         guard let profileVC = segue.destination as? ProfileViewController else{
+         return
+         }
+         profileVC.token = self.tokenModel
+         */
+        guard let profileListVC = segue.destination as? ProfileListViewController else {return}
+        profileListVC.token = self.tokenModel
     }
     
-    func loginSuccessful(){
-//        let segue = self.performSegue(withIdentifier: <#T##String#>, sender: <#T##Any?#>)
+    func loginSuccessful(){ 
         self.tokenModel?.downloadSuccess.listener = nil
-        self.performSegue(withIdentifier: "toProfile", sender: self)
+        self.performSegue(withIdentifier: "toProfileList", sender: self)
     }
     
     func loginUnsuccessful(){
@@ -238,14 +252,14 @@ class LoginViewController: UIViewController {
         let view = UIView(frame: tmpFrame!)
         view.tag = 1
         view.backgroundColor = UIColor.gray.withAlphaComponent(0.8)
-        let indicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
-        indicator.center = view.center
+
         indicator.startAnimating()
         view.addSubview(indicator)
         self.view.addSubview(view)
     }
     
     func removeLoadUI(){
+        indicator.stopAnimating()
         let view  = self.view.viewWithTag(1)
         view?.removeFromSuperview()
     }

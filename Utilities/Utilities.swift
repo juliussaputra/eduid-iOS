@@ -30,3 +30,14 @@ extension UIImage {
     }
     
 }
+
+extension NSString{
+    
+    func height(withConstrainedWidth width: CGFloat, font : UIFont) -> CGFloat {
+        
+        let contraintRect = CGSize(width: width, height: .greatestFiniteMagnitude)
+        let boundingBox = self.boundingRect(with: contraintRect, options: .usesLineFragmentOrigin, attributes: [.font : font], context: nil)
+        return ceil(boundingBox.height)
+    }
+    
+}

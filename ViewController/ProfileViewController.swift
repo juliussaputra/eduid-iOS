@@ -24,6 +24,7 @@ class ProfileViewController: UIViewController {
         
         if token == nil {
             print("TOKEN IS NIL")
+            return
         }
         
         id_Token = (token?.giveIdTokenJWS())!
@@ -32,7 +33,7 @@ class ProfileViewController: UIViewController {
         profileLabel.text = "Hello " + String(describing: id_Token!["given_name"]!) + " " + String(describing: id_Token!["family_name"]!)
         tableView.delegate = self
         tableView.rowHeight = UITableViewAutomaticDimension
-        logoutButton.backgroundColor = UIColor.black
+        logoutButton.backgroundColor = .black
         // Do any additional setup after loading the view.
     }
     

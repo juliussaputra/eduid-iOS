@@ -7,10 +7,12 @@
 //
 
 import UIKit
+import NVActivityIndicatorView
 
 class SplashViewController: UIViewController {
     
-    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+    @IBOutlet weak var titleLabel: UILabel!
+    private var indicator : NVActivityIndicatorView!
     
     var configModel : EduidConfigModel?
     private var reqUrl : URL?
@@ -21,6 +23,7 @@ class SplashViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        self.setUI()
         self.loadPlist()
         configModel = EduidConfigModel(serverUrl: reqUrl)
         
@@ -38,20 +41,27 @@ class SplashViewController: UIViewController {
         self.showBusyUI()
         
         configModel?.deleteAll()
+        
         configModel?.downloadedSuccess.bind (listener: { (dlBool) in
             DispatchQueue.main.async{
                 self.checkDownload(downloaded: dlBool)
             }
         })
         configModel?.fetchServer()
-        //        downloadConfig()
+        downloadConfig()
         
     }
     
-    //    @objc func appearFromBackground() {
-    //        print("appear from background")
-    //        downloadConfig()
-    //    }
+    func setUI(){
+        indicator = NVActivityIndicatorView(frame: CGRect(x: self.view.center.x,
+                                                          y: self.view.center.y,
+                                                          width: self.view.bounds.width / 5, height: self.view.bounds.height / 7))
+        indicator!.color = UIColor(red: 85/255, green: 146/255, blue: 193/255, alpha: 1.0)
+        indicator!.type = .lineScaleParty
+        indicator.isHidden = false
+        indicator.center = self.view.center
+        self.view.insertSubview(indicator, belowSubview: titleLabel)
+    }
     
     func checkDownload(downloaded : Bool?){
         
@@ -85,7 +95,7 @@ class SplashViewController: UIViewController {
          let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timerTmp in
          timeoutCounter += 1
          print(timeoutCounter)
-         if (self.configModel?.configDownloaded)!  {
+         if (!true)  {
          timerTmp.invalidate()
          self.downloadFinished()
          } else if timeoutCounter == 4 {
@@ -115,12 +125,11 @@ class SplashViewController: UIViewController {
     }
     
     func showBusyUI() {
-        self.activityIndicator.startAnimating()
-        
+        self.indicator!.startAnimating()
     }
     
     func hideBusyUI() {
-        self.activityIndicator.stopAnimating()
+        self.indicator!.stopAnimating()
     }
     
     func showAlertUI(){
