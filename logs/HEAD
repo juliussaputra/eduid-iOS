@@ -1,0 +1,23 @@
+0000000000000000000000000000000000000000 96714e482b8f5e912d36c907216fbe897d9ba877 Julius Saputra <julius_saputra@hotmail.com> 1511872593 +0100	commit (initial): Initial commit
+96714e482b8f5e912d36c907216fbe897d9ba877 0000000000000000000000000000000000000000 Julius Saputra <julius_saputra@hotmail.com> 1511872689 +0100	Reverting first commit
+0000000000000000000000000000000000000000 63efce7a48f333016bc3adf2f57cc150af70a661 Julius Saputra <julius_saputra@hotmail.com> 1511872695 +0100	commit (initial): Initial commit
+63efce7a48f333016bc3adf2f57cc150af70a661 75fc5c5fe8912b6f3332a790dbc7a3d4dd87d368 Julius Saputra <julius_saputra@hotmail.com> 1512404698 +0100	commit: Adding Key Manager
+75fc5c5fe8912b6f3332a790dbc7a3d4dd87d368 dc65e0788dbc2fc5b62359d600cdca208873cfc2 Julius Saputra <julius_saputra@hotmail.com> 1512492735 +0100	commit: Key Functions Implementation
+dc65e0788dbc2fc5b62359d600cdca208873cfc2 a7ca1e0fb1ba737439ed7655f89444560fb4b5c5 Julius Saputra <julius_saputra@hotmail.com> 1512982239 +0100	commit: JWS basic implementation
+a7ca1e0fb1ba737439ed7655f89444560fb4b5c5 23ee8842831649057323d4c6b8f5f2a1c0a0115c Julius Saputra <julius_saputra@hotmail.com> 1513239842 +0100	commit: Add jwk-to-pem converter
+23ee8842831649057323d4c6b8f5f2a1c0a0115c 2a77a1ea115600477e7d3459e1f69010d5ca6fcb Julius Saputra <julius_saputra@hotmail.com> 1513341080 +0100	commit: Add Delete function for the keychain
+2a77a1ea115600477e7d3459e1f69010d5ca6fcb 6d81d32604f051a8e7d63c1f6115d9036bb562ee Julius Saputra <julius_saputra@hotmail.com> 1513675887 +0100	commit: bug fixed
+6d81d32604f051a8e7d63c1f6115d9036bb562ee e0e88ae77e163b5a3cd28fe4440f04aa3de007fd Julius Saputra <julius_saputra@hotmail.com> 1515409149 +0100	commit: adding framework JWTswift
+e0e88ae77e163b5a3cd28fe4440f04aa3de007fd 03d1505f369997c1d039654cfda21917c569907f Julius Saputra <julius_saputra@hotmail.com> 1515683336 +0100	commit: basic UI added
+03d1505f369997c1d039654cfda21917c569907f 1b39bdf2a8888e8b0e5f3ff62d68c39d67d62d9d Julius Saputra <julius_saputra@hotmail.com> 1515691961 +0100	commit: minor change for UI
+1b39bdf2a8888e8b0e5f3ff62d68c39d67d62d9d b7e946507648f62d2f93398b1eab26140765a7cc Julius Saputra <julius_saputra@hotmail.com> 1515773477 +0100	commit: bug fixed jws
+b7e946507648f62d2f93398b1eab26140765a7cc 816c4f3b6a5ef7f714b2c759c1d810bc1fb6fce2 Julius Saputra <julius_saputra@hotmail.com> 1516195783 +0100	commit: add confirm logout scree
+816c4f3b6a5ef7f714b2c759c1d810bc1fb6fce2 03d94e5a285eb319754515b2de0fb818cd8e0b54 Julius Saputra <julius_saputra@hotmail.com> 1516206761 +0100	commit: updated framework JWTswift
+03d94e5a285eb319754515b2de0fb818cd8e0b54 25ad1ca26df5c9d537661860d06764ed7659bab3 Julius Saputra <julius_saputra@hotmail.com> 1516294922 +0100	commit: minor update tokenmodel
+25ad1ca26df5c9d537661860d06764ed7659bab3 4727ad88f0a3639a68a49c3ad879fc7fee06675c Julius Saputra <julius_saputra@hotmail.com> 1516372913 +0100	commit: minor fix for extension
+4727ad88f0a3639a68a49c3ad879fc7fee06675c d2a466cf9da31b5e0d05c7f684dab35f9662caac Julius Saputra <julius_saputra@hotmail.com> 1516692805 +0100	commit: minor update with scope for token
+d2a466cf9da31b5e0d05c7f684dab35f9662caac d2f8164d6484402feb19d870107438b010acecd8 Julius Saputra <julius_saputra@hotmail.com> 1516778742 +0100	commit: minor fix
+d2f8164d6484402feb19d870107438b010acecd8 20b60f80e2ea778291e49d7e7ffce5e4b4bb80c6 Julius Saputra <julius_saputra@hotmail.com> 1516979987 +0100	commit: timeout timer improvement
+20b60f80e2ea778291e49d7e7ffce5e4b4bb80c6 8bbeaeb918965e79256179943657a1b2a582f777 Julius Saputra <julius_saputra@hotmail.com> 1517005558 +0100	commit: new class
+8bbeaeb918965e79256179943657a1b2a582f777 eb296731f287054beae2cee36253f5c404177de4 Julius Saputra <julius_saputra@hotmail.com> 1517483791 +0100	commit: update login UI
+eb296731f287054beae2cee36253f5c404177de4 29bd0e791dcc29c4ec301e936a3efc6591ad2003 Julius Saputra <julius_saputra@hotmail.com> 1517822031 +0100	commit: arrange order, adding iglistkit elements
